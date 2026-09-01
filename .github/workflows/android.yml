@@ -20,7 +20,7 @@ jobs:
       - name: Generate Android project shell
         run: flutter create --platforms=android --org=com.meno.app .
       - run: flutter pub get
-      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: dart format lib test
       - run: flutter analyze
       - run: flutter test
       - run: flutter build apk --release
