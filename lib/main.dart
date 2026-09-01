@@ -33,7 +33,7 @@ Future<void> main() async {
   const url = String.fromEnvironment('SUPABASE_URL');
   const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
   if (url.isNotEmpty && anonKey.isNotEmpty) {
-    await Supabase.initialize(url: url, anonKey: anonKey);
+    await Supabase.initialize(url: url, publishableKey: anonKey);
   }
   final repository = url.isNotEmpty && anonKey.isNotEmpty
       ? SupabaseQuestionRepository(Supabase.instance.client)
@@ -197,13 +197,17 @@ class _HomeShellState extends State<HomeShell> {
   Widget _questionList() => FutureBuilder<List<Question>>(
         future: questions,
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()));
+          if (!snapshot.hasData) {
+            return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()));
+          }
           final filtered = snapshot.data!.where((q) {
             final matchesCategory = category == 'الكل' || q.category == category;
             final term = search.trim().toLowerCase();
             return matchesCategory && (term.isEmpty || q.title.toLowerCase().contains(term) || q.body.toLowerCase().contains(term));
           }).toList();
-          if (filtered.isEmpty) return const Padding(padding: EdgeInsets.all(36), child: Center(child: Text('ما لقينا أسئلة مطابقة')));
+          if (filtered.isEmpty) {
+            return const Padding(padding: EdgeInsets.all(36), child: Center(child: Text('ما لقينا أسئلة مطابقة')));
+          }
           return Column(
             children: filtered
                 .map((question) => QuestionCard(
@@ -246,7 +250,7 @@ class QuestionCard extends StatelessWidget {
                 const SizedBox(height: 14),
                 Text(question.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, height: 1.4)),
                 const SizedBox(height: 7),
-                Text(question.body, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.black67, height: 1.5)),
+                Text(question.body, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.black54, height: 1.5)),
                 const SizedBox(height: 14),
                 Row(children: [
                   Container(
