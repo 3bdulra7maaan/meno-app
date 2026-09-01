@@ -197,6 +197,21 @@ class _HomeShellState extends State<HomeShell> {
   Widget _questionList() => FutureBuilder<List<Question>>(
         future: questions,
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.cloud_off_outlined, size: 42, color: navy),
+                  const SizedBox(height: 12),
+                  const Text('ما قدرنا نحمّل الأسئلة. اتأكد من الإنترنت.'),
+                  const SizedBox(height: 8),
+                  TextButton(onPressed: refresh, child: const Text('حاول تاني')),
+                ],
+              ),
+            );
+          }
           if (!snapshot.hasData) {
             return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()));
           }
@@ -289,8 +304,21 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
   Future<void> submit() async {
     if (!formKey.currentState!.validate()) return;
     setState(() => saving = true);
-    await widget.repository.submitQuestion(title: title.text.trim(), body: body.text.trim(), category: category, anonymous: anonymous);
-    if (mounted) Navigator.pop(context, true);
+    try {
+      await widget.repository.submitQuestion(
+        title: title.text.trim(),
+        body: body.text.trim(),
+        category: category,
+        anonymous: anonymous,
+      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ما قدرنا نرسل السؤال. اتأكد من الإنترنت وحاول تاني.')),
+      );
+    }
   }
 
   @override
@@ -351,9 +379,22 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
 
   Future<void> addAnswer() async {
     if (answer.text.trim().isEmpty) return;
-    await widget.repository.submitAnswer(questionId: widget.question.id, body: answer.text.trim());
-    answer.clear();
-    if (mounted) setState(() {});
+    try {
+      final created = await widget.repository.submitAnswer(
+        questionId: widget.question.id,
+        body: answer.text.trim(),
+      );
+      if (!widget.question.answers.any((item) => item.id == created.id)) {
+        widget.question.answers.add(created);
+      }
+      answer.clear();
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ما قدرنا نضيف الإجابة. حاول تاني.')),
+      );
+    }
   }
 
   @override
@@ -370,8 +411,20 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
             ...widget.question.answers.map((item) => _AnswerCard(
                   answer: item,
                   onHelpful: () async {
-                    await widget.repository.toggleHelpful(questionId: widget.question.id, answerId: item.id);
-                    if (mounted) setState(() {});
+                    try {
+                      final result = await widget.repository.toggleHelpful(
+                        questionId: widget.question.id,
+                        answerId: item.id,
+                      );
+                      item.isHelpful = result.isHelpful;
+                      item.helpfulCount = result.helpfulCount;
+                      if (mounted) setState(() {});
+                    } catch (_) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('ما قدرنا نسجل «أفادني». حاول تاني.')),
+                      );
+                    }
                   },
                 )),
           ],
