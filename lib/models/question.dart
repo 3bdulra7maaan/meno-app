@@ -18,6 +18,16 @@ class Answer {
   bool isHelpful;
 }
 
+class HelpfulVoteResult {
+  const HelpfulVoteResult({
+    required this.isHelpful,
+    required this.helpfulCount,
+  });
+
+  final bool isHelpful;
+  final int helpfulCount;
+}
+
 class Question {
   Question({
     required this.id,
