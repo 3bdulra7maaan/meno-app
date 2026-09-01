@@ -92,7 +92,8 @@ class _HomeShellState extends State<HomeShell> {
     final submitted = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => AskQuestionScreen(repository: widget.repository)),
     );
-    if (submitted == true && mounted) {
+    if (!mounted) return;
+    if (submitted == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('وصلنا سؤالك، وحيظهر بعد مراجعة المشرف.')),
       );
