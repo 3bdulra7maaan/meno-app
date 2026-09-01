@@ -12,10 +12,10 @@ class SupabaseQuestionRepository implements QuestionRepository {
   Future<List<Question>> approvedQuestions() async {
     final rows = await _client
         .from('questions')
-        .select('*, answers(*)')
+        .select('*, answers(*, helpful_votes(user_id))')
         .eq('status', 'approved')
         .order('created_at', ascending: false);
-    return (rows as List).map((row) => _questionFromMap(row as Map<String, dynamic>)).toList();
+    return rows.map(_questionFromMap).toList();
   }
 
   @override
@@ -25,48 +25,101 @@ class SupabaseQuestionRepository implements QuestionRepository {
     required String category,
     required bool anonymous,
   }) async {
-    final row = await _client.from('questions').insert({
-      'title': title,
-      'body': body,
-      'category': category,
-      'is_anonymous': anonymous,
-      'status': 'pending',
-    }).select().single();
+    final userId = await _ensureAnonymousSession();
+    final row = await _client
+        .from('questions')
+        .insert({
+          'user_id': userId,
+          'author_name': anonymous ? null : 'مستخدم مينو',
+          'title': title,
+          'body': body,
+          'category': category,
+          'is_anonymous': anonymous,
+          'status': 'pending',
+        })
+        .select()
+        .single();
     return _questionFromMap(row);
   }
 
   @override
-  Future<Answer> submitAnswer({required String questionId, required String body}) async {
-    final row = await _client.from('answers').insert({
-      'question_id': questionId,
-      'body': body,
-    }).select().single();
+  Future<Answer> submitAnswer({
+    required String questionId,
+    required String body,
+  }) async {
+    final userId = await _ensureAnonymousSession();
+    final row = await _client
+        .from('answers')
+        .insert({
+          'question_id': questionId,
+          'user_id': userId,
+          'author_name': 'مستخدم مينو',
+          'body': body,
+        })
+        .select()
+        .single();
     return _answerFromMap(row);
   }
 
   @override
-  Future<void> toggleHelpful({required String questionId, required String answerId}) async {
-    await _client.rpc('toggle_helpful', params: {'answer_id_input': answerId});
+  Future<HelpfulVoteResult> toggleHelpful({
+    required String questionId,
+    required String answerId,
+  }) async {
+    await _ensureAnonymousSession();
+    final row = await _client
+        .rpc(
+          'toggle_helpful',
+          params: {'answer_id_input': answerId},
+        )
+        .single();
+    return HelpfulVoteResult(
+      isHelpful: row['is_helpful'] as bool,
+      helpfulCount: row['helpful_count'] as int,
+    );
   }
 
-  Question _questionFromMap(Map<String, dynamic> row) => Question(
-        id: row['id'].toString(),
-        title: row['title'] as String,
-        body: row['body'] as String,
-        category: row['category'] as String,
-        author: row['is_anonymous'] == true ? 'مجهول' : (row['author_name'] as String? ?? 'مستخدم مينو'),
-        createdAt: DateTime.parse(row['created_at'] as String),
-        status: QuestionStatus.values.byName(row['status'] as String),
-        answers: ((row['answers'] as List?) ?? [])
-            .map((answer) => _answerFromMap(answer as Map<String, dynamic>))
-            .toList(),
-      );
+  Future<String> _ensureAnonymousSession() async {
+    final existingUser = _client.auth.currentUser;
+    if (existingUser != null) return existingUser.id;
 
-  Answer _answerFromMap(Map<String, dynamic> row) => Answer(
-        id: row['id'].toString(),
-        author: row['author_name'] as String? ?? 'مستخدم مينو',
-        body: row['body'] as String,
-        createdAt: DateTime.parse(row['created_at'] as String),
-        helpfulCount: row['helpful_count'] as int? ?? 0,
-      );
+    final response = await _client.auth.signInAnonymously();
+    final user = response.user;
+    if (user == null) {
+      throw const AuthException('تعذر إنشاء جلسة آمنة. حاول مرة أخرى.');
+    }
+    return user.id;
+  }
+
+  Question _questionFromMap(Map<String, dynamic> row) {
+    final answerRows = (row['answers'] as List?) ?? const [];
+    final answers = answerRows
+        .map((answer) => _answerFromMap(answer as Map<String, dynamic>))
+        .toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return Question(
+      id: row['id'].toString(),
+      title: row['title'] as String,
+      body: row['body'] as String,
+      category: row['category'] as String,
+      author: row['is_anonymous'] == true
+          ? 'مجهول'
+          : (row['author_name'] as String? ?? 'مستخدم مينو'),
+      createdAt: DateTime.parse(row['created_at'] as String),
+      status: QuestionStatus.values.byName(row['status'] as String),
+      answers: answers,
+    );
+  }
+
+  Answer _answerFromMap(Map<String, dynamic> row) {
+    final votes = (row['helpful_votes'] as List?) ?? const [];
+    return Answer(
+      id: row['id'].toString(),
+      author: row['author_name'] as String? ?? 'مستخدم مينو',
+      body: row['body'] as String,
+      createdAt: DateTime.parse(row['created_at'] as String),
+      helpfulCount: row['helpful_count'] as int? ?? 0,
+      isHelpful: votes.isNotEmpty,
+    );
+  }
 }
