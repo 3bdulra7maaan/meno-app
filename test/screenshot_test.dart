@@ -12,6 +12,7 @@ import 'package:meno/models/question.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  const enabled = bool.fromEnvironment('CAPTURE_SCREENSHOTS');
 
   Future<void> pumpPhone(
     WidgetTester tester,
@@ -43,7 +44,7 @@ void main() {
     await pumpPhone(tester, InMemoryQuestionRepository(), key);
     await tester.pumpAndSettle();
     await capture(key, 'home');
-  });
+  }, skip: !enabled);
 
   testWidgets('captures search and categories', (tester) async {
     final key = GlobalKey();
@@ -52,7 +53,7 @@ void main() {
     await tester.tap(find.text('بحث'));
     await tester.pumpAndSettle();
     await capture(key, 'search-categories');
-  });
+  }, skip: !enabled);
 
   testWidgets('captures ask question', (tester) async {
     final key = GlobalKey();
@@ -61,7 +62,7 @@ void main() {
     await tester.tap(find.text('اسأل').first);
     await tester.pumpAndSettle();
     await capture(key, 'ask-question');
-  });
+  }, skip: !enabled);
 
   testWidgets('captures question details and answers', (tester) async {
     final key = GlobalKey();
@@ -73,28 +74,28 @@ void main() {
     await tester.drag(find.byType(ListView).last, const Offset(0, -260));
     await tester.pumpAndSettle();
     await capture(key, 'answers');
-  });
+  }, skip: !enabled);
 
   testWidgets('captures empty state', (tester) async {
     final key = GlobalKey();
     await pumpPhone(tester, _StateRepository(Future.value(const [])), key);
     await tester.pumpAndSettle();
     await capture(key, 'empty-state');
-  });
+  }, skip: !enabled);
 
   testWidgets('captures loading state', (tester) async {
     final key = GlobalKey();
     await pumpPhone(tester, _StateRepository(Completer<List<Question>>().future), key);
     await tester.pump(const Duration(milliseconds: 250));
     await capture(key, 'loading-state');
-  });
+  }, skip: !enabled);
 
   testWidgets('captures error state', (tester) async {
     final key = GlobalKey();
     await pumpPhone(tester, _StateRepository(Future.error(Exception('offline'))), key);
     await tester.pumpAndSettle();
     await capture(key, 'error-state');
-  });
+  }, skip: !enabled);
 }
 
 class _StateRepository implements QuestionRepository {
