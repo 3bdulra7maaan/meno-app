@@ -24,7 +24,7 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       - name: Capture UI screenshots
-        run: flutter test test/screenshot_test.dart
+        run: flutter test test/screenshot_test.dart --dart-define=CAPTURE_SCREENSHOTS=true
       - name: Build release APK
         run: >-
           flutter build apk --release
