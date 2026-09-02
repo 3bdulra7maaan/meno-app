@@ -34,8 +34,8 @@ jobs:
       - name: Capture remaining screens with bundled Almarai
         run: >-
           flutter test test/screenshot_test.dart
-          --plain-name "captures (search and categories|ask question|question details and answers|empty state|loading state|error state)"
           --dart-define=CAPTURE_SCREENSHOTS=true
+          --dart-define=CAPTURE_REMAINING=true
       - name: Build release APK
         run: >-
           flutter build apk --release
