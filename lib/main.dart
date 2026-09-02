@@ -144,7 +144,7 @@ class _HomeShellState extends State<HomeShell> {
           textDirection: TextDirection.ltr,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Meno', style: TextStyle(color: primaryBlack, fontWeight: FontWeight.w800, fontSize: 28, letterSpacing: -1.2)),
+            const Text('Meno', style: TextStyle(color: primaryBlack, fontWeight: FontWeight.w800, fontSize: 24.5, letterSpacing: -1)),
             FilledButton.icon(
               onPressed: openAsk,
               style: FilledButton.styleFrom(backgroundColor: warmGold, foregroundColor: primaryBlack, minimumSize: const Size(92, 42), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
@@ -214,7 +214,7 @@ class _HomeShellState extends State<HomeShell> {
             ),
             _categoryList(),
             const Padding(
-              padding: EdgeInsets.fromLTRB(18, 10, 18, 2),
+              padding: EdgeInsets.fromLTRB(18, 6, 18, 2),
               child: Text('أسئلة من المجتمع', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: ink)),
             ),
             _questionList(),
@@ -360,7 +360,7 @@ class QuestionCard extends StatelessWidget {
                   Expanded(child: Text(question.author, style: const TextStyle(fontWeight: FontWeight.w700, color: ink, fontSize: 13))),
                   const Icon(Icons.chat_bubble_outline, size: 18, color: Colors.black54),
                   const SizedBox(width: 5),
-                  Text('${question.answers.length} إجابة', style: const TextStyle(color: Colors.black54)),
+                  Text(answerCountLabel(question.answers.length), style: const TextStyle(color: Colors.black54)),
                 ]),
               ],
             ),
@@ -544,7 +544,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-              child: Text('الإجابات (${widget.question.answers.length})', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: ink)),
+              child: Text(answerCountLabel(widget.question.answers.length), style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: ink)),
             ),
             ...widget.question.answers.map((item) => _AnswerCard(
                   answer: item,
@@ -621,6 +621,14 @@ String _timeAgo(DateTime date) {
   if (difference.inMinutes < 60) return 'منذ ${difference.inMinutes} د';
   if (difference.inHours < 24) return 'منذ ${difference.inHours} س';
   return 'منذ ${difference.inDays} يوم';
+}
+
+String answerCountLabel(int count) {
+  if (count == 0) return 'لا توجد إجابات';
+  if (count == 1) return 'إجابة واحدة';
+  if (count == 2) return 'إجابتان';
+  if (count <= 10) return '$count إجابات';
+  return '$count إجابة';
 }
 
 class _FieldLabel extends StatelessWidget {
