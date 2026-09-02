@@ -8,7 +8,10 @@ import 'models/question.dart';
 
 const navy = Color(0xFF102A43);
 const gold = Color(0xFFF6C344);
-const surface = Color(0xFFF4F6F8);
+const surface = Color(0xFFF8F7F3);
+const ink = Color(0xFF18232D);
+const muted = Color(0xFF64717D);
+const border = Color(0xFFE3E7E9);
 
 const categories = [
   'الكل',
@@ -51,15 +54,24 @@ class MenoApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'Meno',
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: navy, primary: navy, secondary: gold),
+          colorScheme: ColorScheme.fromSeed(seedColor: navy, primary: navy, secondary: gold, surface: Colors.white),
           scaffoldBackgroundColor: surface,
-          fontFamily: 'sans-serif',
           useMaterial3: true,
-          inputDecorationTheme: const InputDecorationTheme(
+          textTheme: const TextTheme(
+            headlineSmall: TextStyle(fontSize: 24, height: 1.4, fontWeight: FontWeight.w900, color: ink),
+            titleLarge: TextStyle(fontSize: 19, height: 1.5, fontWeight: FontWeight.w800, color: ink),
+            bodyLarge: TextStyle(fontSize: 16, height: 1.7, color: ink),
+            bodyMedium: TextStyle(fontSize: 14, height: 1.6, color: muted),
+          ),
+          inputDecorationTheme: InputDecorationTheme(
             filled: true,
             fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(14)), borderSide: BorderSide.none),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: border)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: navy, width: 1.5)),
           ),
+          snackBarTheme: const SnackBarThemeData(backgroundColor: navy, behavior: SnackBarBehavior.floating),
         ),
         builder: (context, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
         home: HomeShell(repository: repository),
@@ -94,8 +106,9 @@ class _HomeShellState extends State<HomeShell> {
     );
     if (!mounted) return;
     if (submitted == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('وصلنا سؤالك، وحيظهر بعد مراجعة المشرف.')),
+      await showDialog<void>(
+        context: context,
+        builder: (context) => const _SubmissionDialog(),
       );
     }
   }
@@ -105,21 +118,21 @@ class _HomeShellState extends State<HomeShell> {
     final pages = [
       _home(),
       _search(),
-      const Center(child: Text('إشعاراتك حتظهر هنا', style: TextStyle(fontSize: 18, color: navy))),
-      const Center(child: Text('حسابي', style: TextStyle(fontSize: 18, color: navy))),
+      const _AboutPage(),
     ];
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        titleSpacing: 16,
+        toolbarHeight: 68,
+        titleSpacing: 18,
         title: Row(
           textDirection: TextDirection.ltr,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Meno', style: TextStyle(color: navy, fontWeight: FontWeight.w900, fontSize: 27)),
+            const Text('Meno', style: TextStyle(color: navy, fontWeight: FontWeight.w900, fontSize: 28, letterSpacing: -1.2)),
             FilledButton.icon(
               onPressed: openAsk,
-              style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: navy),
+              style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: navy, minimumSize: const Size(94, 46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
               icon: const Icon(Icons.add, size: 19),
               label: const Text('اسأل', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
@@ -128,14 +141,15 @@ class _HomeShellState extends State<HomeShell> {
       ),
       body: SafeArea(child: pages[index]),
       bottomNavigationBar: NavigationBar(
+        height: 70,
+        backgroundColor: Colors.white,
         selectedIndex: index,
         indicatorColor: gold.withValues(alpha: .45),
         onDestinationSelected: (value) => setState(() => index = value),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'الرئيسية'),
           NavigationDestination(icon: Icon(Icons.search), label: 'بحث'),
-          NavigationDestination(icon: Icon(Icons.notifications_none), label: 'الإشعارات'),
-          NavigationDestination(icon: Icon(Icons.person_outline), label: 'حسابي'),
+          NavigationDestination(icon: Icon(Icons.info_outline_rounded), selectedIcon: Icon(Icons.info_rounded), label: 'عن مينو'),
         ],
       ),
     );
@@ -147,33 +161,51 @@ class _HomeShellState extends State<HomeShell> {
           padding: const EdgeInsets.only(bottom: 20),
           children: [
             Container(
-              color: navy,
+              decoration: const BoxDecoration(color: navy, borderRadius: BorderRadius.only(bottomLeft: Radius.circular(26), bottomRight: Radius.circular(26))),
               padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('اسأل زول جرّب', style: TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w800)),
-                  SizedBox(height: 6),
-                  Text('إجابات سودانية من تجارب حقيقية', style: TextStyle(color: Colors.white70, fontSize: 15)),
+                  const Text('اسأل زول جرّب', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 5),
+                  const Text('إجابات قريبة منك، من ناس عندهم تجربة حقيقية.', style: TextStyle(color: Color(0xFFD7E3EC), fontSize: 15)),
+                  const SizedBox(height: 18),
+                  InkWell(
+                    onTap: () => setState(() => index = 1),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      height: 54,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                      child: const Row(children: [Icon(Icons.search_rounded, color: navy), SizedBox(width: 10), Text('فتّش في تجارب الناس...', style: TextStyle(color: muted, fontSize: 15))]),
+                    ),
+                  ),
                 ],
               ),
             ),
             _categoryList(),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(18, 14, 18, 4),
+              child: Row(children: [Text('أسئلة من المجتمع', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: ink)), Spacer(), Text('الأحدث', style: TextStyle(color: muted, fontWeight: FontWeight.w700))]),
+            ),
             _questionList(),
           ],
         ),
       );
 
   Widget _search() => Padding(
-        padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
         child: Column(
           children: [
             TextField(
-              autofocus: true,
+              key: const Key('search-field'),
+              autofocus: false,
+              textInputAction: TextInputAction.search,
               onChanged: (value) => setState(() => search = value),
               decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'فتّش في الأسئلة...'),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
+            _categoryList(),
             Expanded(child: _questionList()),
           ],
         ),
@@ -186,12 +218,20 @@ class _HomeShellState extends State<HomeShell> {
           scrollDirection: Axis.horizontal,
           itemCount: categories.length,
           separatorBuilder: (_, __) => const SizedBox(width: 8),
-          itemBuilder: (_, i) => ChoiceChip(
-            label: Text(categories[i]),
-            selected: category == categories[i],
-            selectedColor: gold,
-            onSelected: (_) => setState(() => category = categories[i]),
-          ),
+          itemBuilder: (_, i) {
+            final selected = category == categories[i];
+            return ChoiceChip(
+              label: Text(categories[i]),
+              selected: selected,
+              showCheckmark: false,
+              backgroundColor: Colors.white,
+              selectedColor: navy,
+              side: BorderSide(color: selected ? navy : border),
+              labelStyle: TextStyle(color: selected ? Colors.white : ink, fontWeight: FontWeight.w700),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+              onSelected: (_) => setState(() => category = categories[i]),
+            );
+          },
         ),
       );
 
@@ -200,21 +240,24 @@ class _HomeShellState extends State<HomeShell> {
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Padding(
-              padding: const EdgeInsets.all(32),
+              key: const Key('error-state'),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 42),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.cloud_off_outlined, size: 42, color: navy),
-                  const SizedBox(height: 12),
-                  const Text('ما قدرنا نحمّل الأسئلة. اتأكد من الإنترنت.'),
-                  const SizedBox(height: 8),
-                  TextButton(onPressed: refresh, child: const Text('حاول تاني')),
+                  Container(width: 72, height: 72, decoration: const BoxDecoration(color: Color(0xFFFFE9A8), shape: BoxShape.circle), child: const Icon(Icons.wifi_off_rounded, size: 34, color: navy)),
+                  const SizedBox(height: 18),
+                  const Text('الاتصال ما زبط', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: ink)),
+                  const SizedBox(height: 7),
+                  const Text('اتأكد من الإنترنت وحاول تاني. أسئلتك وتجاربك ما حتضيع.', textAlign: TextAlign.center, style: TextStyle(color: muted, height: 1.6)),
+                  const SizedBox(height: 14),
+                  OutlinedButton.icon(onPressed: refresh, icon: const Icon(Icons.refresh_rounded), label: const Text('حاول تاني')),
                 ],
               ),
             );
           }
           if (!snapshot.hasData) {
-            return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()));
+            return const _LoadingFeed();
           }
           final filtered = snapshot.data!.where((q) {
             final matchesCategory = category == 'الكل' || q.category == category;
@@ -222,7 +265,19 @@ class _HomeShellState extends State<HomeShell> {
             return matchesCategory && (term.isEmpty || q.title.toLowerCase().contains(term) || q.body.toLowerCase().contains(term));
           }).toList();
           if (filtered.isEmpty) {
-            return const Padding(padding: EdgeInsets.all(36), child: Center(child: Text('ما لقينا أسئلة مطابقة')));
+            return Padding(
+              key: const Key('empty-state'),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 42),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Container(width: 72, height: 72, decoration: const BoxDecoration(color: Color(0xFFEAF0F4), shape: BoxShape.circle), child: const Icon(Icons.search_off_rounded, size: 34, color: navy)),
+                const SizedBox(height: 18),
+                const Text('ما لقينا نتيجة مطابقة', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: ink)),
+                const SizedBox(height: 7),
+                const Text('جرّب كلمة أقصر أو اختار «الكل».', style: TextStyle(color: muted)),
+                const SizedBox(height: 14),
+                FilledButton(onPressed: () => setState(() { search = ''; category = 'الكل'; }), child: const Text('امسح البحث')),
+              ]),
+            );
           }
           return Column(
             children: filtered
@@ -245,39 +300,39 @@ class QuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        margin: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+        margin: const EdgeInsets.fromLTRB(14, 7, 14, 7),
         elevation: 0,
         color: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(side: const BorderSide(color: border), borderRadius: BorderRadius.circular(18)),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(17),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  CircleAvatar(radius: 18, backgroundColor: surface, child: Text(question.author.characters.first, style: const TextStyle(color: navy))),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(question.author, style: const TextStyle(fontWeight: FontWeight.w700))),
+                  Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFFF2C8), borderRadius: BorderRadius.circular(9)), child: Text(question.category, style: const TextStyle(color: navy, fontSize: 12, fontWeight: FontWeight.w800))),
+                  const Spacer(),
                   Text(_timeAgo(question.createdAt), style: const TextStyle(color: Colors.black45, fontSize: 12)),
                 ]),
                 const SizedBox(height: 14),
-                Text(question.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, height: 1.4)),
+                Text(question.title, style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 7),
                 Text(question.body, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.black54, height: 1.5)),
                 const SizedBox(height: 14),
+                const Divider(height: 1, color: border),
+                const SizedBox(height: 11),
                 Row(children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                    decoration: BoxDecoration(color: gold.withValues(alpha: .22), borderRadius: BorderRadius.circular(20)),
-                    child: Text(question.category, style: const TextStyle(color: navy, fontSize: 12, fontWeight: FontWeight.w600)),
-                  ),
-                  const Spacer(),
+                  CircleAvatar(radius: 14, backgroundColor: const Color(0xFFEAF0F4), child: Text(question.author.characters.first, style: const TextStyle(color: navy, fontSize: 12, fontWeight: FontWeight.w800))),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(question.author, style: const TextStyle(fontWeight: FontWeight.w700, color: ink, fontSize: 13))),
                   const Icon(Icons.chat_bubble_outline, size: 18, color: Colors.black54),
                   const SizedBox(width: 5),
                   Text('${question.answers.length} إجابة', style: const TextStyle(color: Colors.black54)),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_back_ios_new_rounded, size: 13, color: navy),
                 ]),
               ],
             ),
@@ -302,6 +357,13 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
   bool anonymous = false;
   bool saving = false;
 
+  @override
+  void dispose() {
+    title.dispose();
+    body.dispose();
+    super.dispose();
+  }
+
   Future<void> submit() async {
     if (!formKey.currentState!.validate()) return;
     setState(() => saving = true);
@@ -324,38 +386,60 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('اسأل سؤال'), backgroundColor: Colors.white),
+        appBar: AppBar(title: const Text('سؤال جديد', style: TextStyle(fontWeight: FontWeight.w800)), backgroundColor: Colors.white),
         body: Form(
           key: formKey,
           child: ListView(
-            padding: const EdgeInsets.all(18),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 32),
             children: [
-              const Text('شنو الداير تعرفو؟', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: navy)),
-              const SizedBox(height: 6),
-              const Text('اكتب بوضوح عشان الناس المجربين يقدروا يفيدوك.', style: TextStyle(color: Colors.black54)),
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(color: const Color(0xFFFFF2C8), borderRadius: BorderRadius.circular(18)),
+                child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.lightbulb_outline_rounded, color: navy), SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('خلي سؤالك واضح ومحدد', style: TextStyle(fontWeight: FontWeight.w900, color: navy, fontSize: 16)),
+                    SizedBox(height: 3),
+                    Text('قول للناس شنو جرّبت وشنو بالضبط الداير تعرفو.', style: TextStyle(color: Color(0xFF5D512B), height: 1.55)),
+                  ])),
+                ]),
+              ),
               const SizedBox(height: 22),
-              TextFormField(controller: title, maxLength: 120, decoration: const InputDecoration(labelText: 'السؤال'), validator: (v) => v == null || v.trim().length < 8 ? 'اكتب سؤال أوضح' : null),
+              const _FieldLabel(number: '١', title: 'اكتب السؤال'),
+              const SizedBox(height: 8),
+              TextFormField(key: const Key('question-title-field'), controller: title, maxLength: 120, textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'شنو الداير تعرفو؟'), validator: (v) => v == null || v.trim().length < 8 ? 'اكتب سؤال أوضح — على الأقل ٨ حروف' : null),
               const SizedBox(height: 12),
-              TextFormField(controller: body, maxLines: 4, maxLength: 500, decoration: const InputDecoration(labelText: 'تفاصيل إضافية'), validator: (v) => v == null || v.trim().isEmpty ? 'أضف شوية تفاصيل' : null),
+              const _FieldLabel(number: '٢', title: 'أضف التفاصيل'),
+              const SizedBox(height: 8),
+              TextFormField(key: const Key('question-body-field'), controller: body, minLines: 4, maxLines: 7, maxLength: 500, decoration: const InputDecoration(hintText: 'أشرح الظروف المهمة عشان الناس يجاوبوك بدقة...'), validator: (v) => v == null || v.trim().isEmpty ? 'أضف شوية تفاصيل تساعد الناس' : null),
               const SizedBox(height: 12),
+              const _FieldLabel(number: '٣', title: 'اختار التصنيف'),
+              const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: category,
                 decoration: const InputDecoration(labelText: 'التصنيف'),
                 items: categories.skip(1).map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
                 onChanged: (value) => setState(() => category = value!),
               ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                value: anonymous,
-                activeThumbColor: navy,
-                title: const Text('اسأل كمجهول', style: TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: const Text('اسمك ما حيظهر مع السؤال'),
-                onChanged: (value) => setState(() => anonymous = value),
+              const SizedBox(height: 14),
+              Container(
+                decoration: BoxDecoration(color: Colors.white, border: Border.all(color: border), borderRadius: BorderRadius.circular(18)),
+                child: SwitchListTile(
+                  minTileHeight: 72,
+                  value: anonymous,
+                  activeThumbColor: navy,
+                  secondary: const Icon(Icons.visibility_off_outlined, color: navy),
+                  title: const Text('اسأل كمجهول', style: TextStyle(fontWeight: FontWeight.w800)),
+                  subtitle: const Text('اسمك ما حيظهر مع السؤال'),
+                  onChanged: (value) => setState(() => anonymous = value),
+                ),
               ),
               const SizedBox(height: 20),
               FilledButton(
+                key: const Key('submit-question-button'),
                 onPressed: saving ? null : submit,
-                style: FilledButton.styleFrom(backgroundColor: navy, padding: const EdgeInsets.symmetric(vertical: 15)),
+                style: FilledButton.styleFrom(backgroundColor: navy, minimumSize: const Size.fromHeight(54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                 child: Text(saving ? 'جاري الإرسال...' : 'أرسل للمراجعة', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 10),
@@ -377,6 +461,12 @@ class QuestionDetailsScreen extends StatefulWidget {
 
 class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
   final answer = TextEditingController();
+
+  @override
+  void dispose() {
+    answer.dispose();
+    super.dispose();
+  }
 
   Future<void> addAnswer() async {
     if (answer.text.trim().isEmpty) return;
@@ -402,12 +492,28 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: const Text('السؤال'), backgroundColor: Colors.white),
         body: ListView(
+          key: const Key('details-list'),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.only(bottom: 110),
           children: [
-            QuestionCard(question: widget.question, onTap: () {}),
+            Container(
+              margin: const EdgeInsets.fromLTRB(14, 10, 14, 4),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: Colors.white, border: Border.all(color: border), borderRadius: BorderRadius.circular(20)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFFF2C8), borderRadius: BorderRadius.circular(9)), child: Text(widget.question.category, style: const TextStyle(color: navy, fontSize: 12, fontWeight: FontWeight.w800))), const Spacer(), Text(_timeAgo(widget.question.createdAt), style: const TextStyle(color: muted, fontSize: 12))]),
+                const SizedBox(height: 15),
+                Text(widget.question.title, style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: 8),
+                Text(widget.question.body, style: Theme.of(context).textTheme.bodyLarge),
+                const SizedBox(height: 16),
+                const Divider(color: border),
+                Row(children: [const CircleAvatar(radius: 15, backgroundColor: Color(0xFFEAF0F4), child: Icon(Icons.person_outline_rounded, size: 17, color: navy)), const SizedBox(width: 8), Text(widget.question.author, style: const TextStyle(fontWeight: FontWeight.w700, color: ink))]),
+              ]),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-              child: Text('${widget.question.answers.length} إجابة', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: navy)),
+              child: Text('الإجابات (${widget.question.answers.length})', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: ink)),
             ),
             ...widget.question.answers.map((item) => _AnswerCard(
                   answer: item,
@@ -435,7 +541,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
             child: Row(children: [
-              Expanded(child: TextField(controller: answer, minLines: 1, maxLines: 3, decoration: const InputDecoration(hintText: 'جاوب من تجربتك...'))),
+              Expanded(child: TextField(key: const Key('answer-field'), controller: answer, minLines: 1, maxLines: 4, decoration: const InputDecoration(hintText: 'شارك تجربة أو معلومة مفيدة...'))),
               const SizedBox(width: 8),
               IconButton.filled(onPressed: addAnswer, style: IconButton.styleFrom(backgroundColor: navy), icon: const Icon(Icons.send)),
             ]),
@@ -454,15 +560,16 @@ class _AnswerCard extends StatelessWidget {
         margin: const EdgeInsets.fromLTRB(12, 5, 12, 5),
         elevation: 0,
         color: Colors.white,
+        shape: RoundedRectangleBorder(side: const BorderSide(color: border), borderRadius: BorderRadius.circular(18)),
         child: Padding(
-          padding: const EdgeInsets.all(15),
+          padding: const EdgeInsets.all(17),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               const CircleAvatar(radius: 16, backgroundColor: navy, child: Icon(Icons.person, color: Colors.white, size: 18)),
               const SizedBox(width: 9),
               Text(answer.author, style: const TextStyle(fontWeight: FontWeight.w700)),
               const Spacer(),
-              Text(_timeAgo(answer.createdAt), style: const TextStyle(color: Colors.black45, fontSize: 12)),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFEAF0F4), borderRadius: BorderRadius.circular(9)), child: Text(answer.answerType, style: const TextStyle(color: navy, fontSize: 11.5, fontWeight: FontWeight.w700))),
             ]),
             const SizedBox(height: 12),
             Text(answer.body, style: const TextStyle(fontSize: 15, height: 1.6)),
@@ -483,4 +590,54 @@ String _timeAgo(DateTime date) {
   if (difference.inMinutes < 60) return 'منذ ${difference.inMinutes} د';
   if (difference.inHours < 24) return 'منذ ${difference.inHours} س';
   return 'منذ ${difference.inDays} يوم';
+}
+
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel({required this.number, required this.title});
+  final String number;
+  final String title;
+  @override
+  Widget build(BuildContext context) => Row(children: [
+    CircleAvatar(radius: 13, backgroundColor: navy, child: Text(number, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800))),
+    const SizedBox(width: 9),
+    Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: ink)),
+  ]);
+}
+
+class _SubmissionDialog extends StatelessWidget {
+  const _SubmissionDialog();
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    icon: Container(width: 70, height: 70, decoration: const BoxDecoration(color: Color(0xFFFFE9A8), shape: BoxShape.circle), child: const Icon(Icons.check_rounded, size: 38, color: navy)),
+    title: const Text('وصلنا سؤالك', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, color: navy)),
+    content: const Text('سؤالك الآن في المراجعة، وحيظهر للمجتمع أول ما يتم اعتماده.', textAlign: TextAlign.center),
+    actionsAlignment: MainAxisAlignment.center,
+    actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('تمام'))],
+  );
+}
+
+class _AboutPage extends StatelessWidget {
+  const _AboutPage();
+  @override
+  Widget build(BuildContext context) => ListView(padding: const EdgeInsets.all(24), children: [
+    const Text('Meno', textDirection: TextDirection.ltr, style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: navy)),
+    const Text('اسأل زول جرّب', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: ink)),
+    const SizedBox(height: 18),
+    Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: border), borderRadius: BorderRadius.circular(18)), child: const Text('مينو مجتمع سوداني بسيط للأسئلة والأجوبة المبنية على التجارب الحقيقية. هدفنا نخلي الوصول للمعلومة العملية أسهل وأقرب.', style: TextStyle(fontSize: 16, height: 1.7, color: ink))),
+  ]);
+}
+
+class _LoadingFeed extends StatelessWidget {
+  const _LoadingFeed();
+  @override
+  Widget build(BuildContext context) => Padding(
+    key: const Key('loading-state'),
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    child: Column(children: List.generate(3, (index) => Container(
+      height: 155,
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: border), borderRadius: BorderRadius.circular(18)),
+      child: const Center(child: SizedBox(width: 26, height: 26, child: CircularProgressIndicator(strokeWidth: 2, color: navy))),
+    ))),
+  );
 }
