@@ -67,7 +67,7 @@ void main() {
       Theme.of(tester.element(tagline)).textTheme.bodyMedium?.fontFamily,
       'Almarai',
     );
-    await _expectArabicGlyphsAreNotTofu();
+    await tester.runAsync(_expectArabicGlyphsAreNotTofu);
 
     await capture(tester, key, 'home');
   }, skip: !enabled);
