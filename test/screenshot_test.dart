@@ -12,6 +12,7 @@ import 'package:meno/models/question.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  const enabled = bool.fromEnvironment('CAPTURE_SCREENSHOTS');
 
   Future<void> pumpPhone(
     WidgetTester tester,
@@ -30,20 +31,22 @@ void main() {
     );
   }
 
-  Future<void> capture(GlobalKey key, String name) async {
-    final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-    final image = await boundary.toImage(pixelRatio: 2);
-    final data = await image.toByteData(format: ui.ImageByteFormat.png);
-    final directory = Directory('build/screenshots')..createSync(recursive: true);
-    await File('${directory.path}/$name.png').writeAsBytes(data!.buffer.asUint8List());
+  Future<void> capture(WidgetTester tester, GlobalKey key, String name) async {
+    await tester.runAsync(() async {
+      final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      final image = await boundary.toImage(pixelRatio: 2);
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      final directory = Directory('build/screenshots')..createSync(recursive: true);
+      await File('${directory.path}/$name.png').writeAsBytes(data!.buffer.asUint8List());
+    });
   }
 
   testWidgets('captures home', (tester) async {
     final key = GlobalKey();
     await pumpPhone(tester, InMemoryQuestionRepository(), key);
     await tester.pumpAndSettle();
-    await capture(key, 'home');
-  });
+    await capture(tester, key, 'home');
+  }, skip: !enabled);
 
   testWidgets('captures search and categories', (tester) async {
     final key = GlobalKey();
@@ -51,8 +54,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('بحث'));
     await tester.pumpAndSettle();
-    await capture(key, 'search-categories');
-  });
+    await capture(tester, key, 'search-categories');
+  }, skip: !enabled);
 
   testWidgets('captures ask question', (tester) async {
     final key = GlobalKey();
@@ -60,8 +63,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('اسأل').first);
     await tester.pumpAndSettle();
-    await capture(key, 'ask-question');
-  });
+    await capture(tester, key, 'ask-question');
+  }, skip: !enabled);
 
   testWidgets('captures question details and answers', (tester) async {
     final key = GlobalKey();
@@ -69,32 +72,36 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('أفضل طريقة للتحويل من قطر للسودان شنو؟'));
     await tester.pumpAndSettle();
-    await capture(key, 'question-details');
+    await capture(tester, key, 'question-details');
     await tester.drag(find.byType(ListView).last, const Offset(0, -260));
     await tester.pumpAndSettle();
-    await capture(key, 'answers');
-  });
+    await capture(tester, key, 'answers');
+  }, skip: !enabled);
 
   testWidgets('captures empty state', (tester) async {
     final key = GlobalKey();
     await pumpPhone(tester, _StateRepository(Future.value(const [])), key);
     await tester.pumpAndSettle();
-    await capture(key, 'empty-state');
-  });
+    await capture(tester, key, 'empty-state');
+  }, skip: !enabled);
 
   testWidgets('captures loading state', (tester) async {
     final key = GlobalKey();
     await pumpPhone(tester, _StateRepository(Completer<List<Question>>().future), key);
     await tester.pump(const Duration(milliseconds: 250));
-    await capture(key, 'loading-state');
-  });
+    await capture(tester, key, 'loading-state');
+  }, skip: !enabled);
 
   testWidgets('captures error state', (tester) async {
     final key = GlobalKey();
-    await pumpPhone(tester, _StateRepository(Future.error(Exception('offline'))), key);
+    await pumpPhone(
+      tester,
+      _StateRepository(Future<List<Question>>.delayed(const Duration(milliseconds: 1), () => throw Exception('offline'))),
+      key,
+    );
     await tester.pumpAndSettle();
-    await capture(key, 'error-state');
-  });
+    await capture(tester, key, 'error-state');
+  }, skip: !enabled);
 }
 
 class _StateRepository implements QuestionRepository {
