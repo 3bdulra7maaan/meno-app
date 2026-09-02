@@ -82,6 +82,12 @@ class MenoApp extends StatelessWidget {
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
             fillColor: Colors.white,
+            counterStyle: const TextStyle(
+              color: muted,
+              fontSize: 11,
+              height: 1.2,
+              fontWeight: FontWeight.w400,
+            ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: border)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: border)),
@@ -521,6 +527,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(title: const Text('السؤال'), backgroundColor: Colors.white),
         body: ListView(
           key: const Key('details-list'),
@@ -568,13 +575,14 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
           ],
         ),
         bottomSheet: SafeArea(
+          top: false,
           child: Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
             child: Row(children: [
               Expanded(child: TextField(key: const Key('answer-field'), controller: answer, minLines: 1, maxLines: 4, decoration: const InputDecoration(hintText: 'شارك تجربة أو معلومة مفيدة...'))),
               const SizedBox(width: 8),
-              IconButton.filled(onPressed: addAnswer, style: IconButton.styleFrom(backgroundColor: primaryBlack), icon: const Icon(Icons.send)),
+              IconButton.filled(key: const Key('answer-send-button'), onPressed: addAnswer, style: IconButton.styleFrom(backgroundColor: primaryBlack), icon: const Icon(Icons.send)),
             ]),
           ),
         ),
