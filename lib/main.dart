@@ -134,7 +134,6 @@ class _HomeShellState extends State<HomeShell> {
     final pages = [
       _home(),
       _search(),
-      const _AboutPage(),
     ];
     return Scaffold(
       appBar: AppBar(
@@ -148,7 +147,7 @@ class _HomeShellState extends State<HomeShell> {
             const Text('Meno', style: TextStyle(color: primaryBlack, fontWeight: FontWeight.w800, fontSize: 28, letterSpacing: -1.2)),
             FilledButton.icon(
               onPressed: openAsk,
-              style: FilledButton.styleFrom(backgroundColor: warmGold, foregroundColor: primaryBlack, minimumSize: const Size(94, 46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+              style: FilledButton.styleFrom(backgroundColor: warmGold, foregroundColor: primaryBlack, minimumSize: const Size(92, 42), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
               icon: const Icon(Icons.add, size: 19),
               label: const Text('اسأل', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
@@ -159,13 +158,27 @@ class _HomeShellState extends State<HomeShell> {
       bottomNavigationBar: NavigationBar(
         height: 70,
         backgroundColor: Colors.white,
-        selectedIndex: index,
+        selectedIndex: index == 0 ? 0 : 2,
         indicatorColor: warmGold.withValues(alpha: .45),
-        onDestinationSelected: (value) => setState(() => index = value),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'الرئيسية'),
-          NavigationDestination(icon: Icon(Icons.search), label: 'بحث'),
-          NavigationDestination(icon: Icon(Icons.info_outline_rounded), selectedIcon: Icon(Icons.info_rounded), label: 'عن مينو'),
+        onDestinationSelected: (value) {
+          if (value == 1) {
+            openAsk();
+          } else {
+            setState(() => index = value == 0 ? 0 : 1);
+          }
+        },
+        destinations: [
+          const NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'الرئيسية'),
+          NavigationDestination(
+            icon: Container(
+              width: 42,
+              height: 34,
+              decoration: BoxDecoration(color: warmGold, borderRadius: BorderRadius.circular(12)),
+              child: const Icon(Icons.add_rounded, color: primaryBlack),
+            ),
+            label: 'اسأل',
+          ),
+          const NavigationDestination(icon: Icon(Icons.search), label: 'بحث'),
         ],
       ),
     );
@@ -178,19 +191,19 @@ class _HomeShellState extends State<HomeShell> {
           children: [
             Container(
               decoration: const BoxDecoration(color: primaryBlack, borderRadius: BorderRadius.only(bottomLeft: Radius.circular(26), bottomRight: Radius.circular(26))),
-              padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('اسأل زول جرّب', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 2),
                   const Text('إجابات قريبة منك، من ناس عندهم تجربة حقيقية.', style: TextStyle(color: Color(0xFFF2E9DA), fontSize: 15)),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 10),
                   InkWell(
                     onTap: () => setState(() => index = 1),
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      height: 54,
+                      height: 48,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
                       child: const Row(children: [Icon(Icons.search_rounded, color: primaryBlack), SizedBox(width: 10), Expanded(child: Text('فتّش في تجارب الناس...', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 15)))]),
@@ -201,8 +214,8 @@ class _HomeShellState extends State<HomeShell> {
             ),
             _categoryList(),
             const Padding(
-              padding: EdgeInsets.fromLTRB(18, 14, 18, 4),
-              child: Row(children: [Expanded(child: Text('أسئلة من المجتمع', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: ink))), SizedBox(width: 8), Text('الأحدث', style: TextStyle(color: muted, fontWeight: FontWeight.w700))]),
+              padding: EdgeInsets.fromLTRB(18, 10, 18, 2),
+              child: Text('أسئلة من المجتمع', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: ink)),
             ),
             _questionList(),
           ],
@@ -228,9 +241,9 @@ class _HomeShellState extends State<HomeShell> {
       );
 
   Widget _categoryList() => SizedBox(
-        height: 58,
+        height: 52,
         child: ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           scrollDirection: Axis.horizontal,
           itemCount: categories.length,
           separatorBuilder: (_, __) => const SizedBox(width: 8),
@@ -316,7 +329,7 @@ class QuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        margin: const EdgeInsets.fromLTRB(14, 7, 14, 7),
+        margin: const EdgeInsets.fromLTRB(14, 5, 14, 5),
         elevation: 0,
         color: Colors.white,
         shape: RoundedRectangleBorder(side: const BorderSide(color: border), borderRadius: BorderRadius.circular(18)),
@@ -324,7 +337,7 @@ class QuestionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(17),
+            padding: const EdgeInsets.fromLTRB(14, 13, 14, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -334,13 +347,13 @@ class QuestionCard extends StatelessWidget {
                   const Spacer(),
                   Text(_timeAgo(question.createdAt), style: const TextStyle(color: Colors.black45, fontSize: 12)),
                 ]),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 Text(question.title, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 7),
+                const SizedBox(height: 4),
                 Text(question.body, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.black54, height: 1.5)),
-                const SizedBox(height: 14),
+                const SizedBox(height: 9),
                 const Divider(height: 1, color: border),
-                const SizedBox(height: 11),
+                const SizedBox(height: 8),
                 Row(children: [
                   CircleAvatar(radius: 14, backgroundColor: const Color(0xFFF2EDE5), child: Text(question.author.characters.first, style: const TextStyle(color: primaryBlack, fontSize: 12, fontWeight: FontWeight.w800))),
                   const SizedBox(width: 8),
@@ -632,17 +645,6 @@ class _SubmissionDialog extends StatelessWidget {
     actionsAlignment: MainAxisAlignment.center,
     actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('تمام'))],
   );
-}
-
-class _AboutPage extends StatelessWidget {
-  const _AboutPage();
-  @override
-  Widget build(BuildContext context) => ListView(padding: const EdgeInsets.all(24), children: [
-    const Text('Meno', textDirection: TextDirection.ltr, style: TextStyle(fontSize: 38, fontWeight: FontWeight.w800, color: primaryBlack)),
-    const Text('اسأل زول جرّب', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: ink)),
-    const SizedBox(height: 18),
-    Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: border), borderRadius: BorderRadius.circular(18)), child: const Text('مينو مجتمع سوداني بسيط للأسئلة والأجوبة المبنية على التجارب الحقيقية. هدفنا نخلي الوصول للمعلومة العملية أسهل وأقرب.', style: TextStyle(fontSize: 16, height: 1.7, color: ink))),
-  ]);
 }
 
 class _LoadingFeed extends StatelessWidget {
