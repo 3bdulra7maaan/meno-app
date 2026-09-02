@@ -27,6 +27,10 @@ void main() {
       loader.addFont(rootBundle.load(asset));
     }
     await loader.load();
+
+    final iconLoader = FontLoader('MaterialIcons')
+      ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
+    await iconLoader.load();
   });
 
   Future<void> pumpPhone(
