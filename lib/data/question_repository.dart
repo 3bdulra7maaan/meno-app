@@ -15,7 +15,7 @@ abstract class QuestionRepository {
     required String body,
   });
 
-  Future<void> toggleHelpful({
+  Future<HelpfulVoteResult> toggleHelpful({
     required String questionId,
     required String answerId,
   });

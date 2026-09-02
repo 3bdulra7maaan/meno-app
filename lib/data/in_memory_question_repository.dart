@@ -98,7 +98,7 @@ class InMemoryQuestionRepository implements QuestionRepository {
   }
 
   @override
-  Future<void> toggleHelpful({
+  Future<HelpfulVoteResult> toggleHelpful({
     required String questionId,
     required String answerId,
   }) async {
@@ -108,5 +108,9 @@ class InMemoryQuestionRepository implements QuestionRepository {
         .firstWhere((item) => item.id == answerId);
     answer.isHelpful = !answer.isHelpful;
     answer.helpfulCount += answer.isHelpful ? 1 : -1;
+    return HelpfulVoteResult(
+      isHelpful: answer.isHelpful,
+      helpfulCount: answer.helpfulCount,
+    );
   }
 }
