@@ -36,6 +36,12 @@ jobs:
           flutter test test/screenshot_test.dart
           --plain-name "captures home"
           --dart-define=CAPTURE_SCREENSHOTS=true
+      - name: Expose Home PNG for visual verification
+        run: |
+          echo "HOME_PNG_BASE64_START"
+          base64 -w 0 build/screenshots/home.png
+          echo
+          echo "HOME_PNG_BASE64_END"
       - name: Build release APK
         run: >-
           flutter build apk --release
