@@ -23,6 +23,8 @@ jobs:
       - run: dart format lib test
       - run: flutter analyze
       - run: flutter test
+      - name: Capture UI screenshots
+        run: flutter test test/screenshot_test.dart
       - name: Build release APK
         run: >-
           flutter build apk --release
@@ -35,3 +37,7 @@ jobs:
         with:
           name: meno-android-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meno-ui-screenshots
+          path: build/screenshots/*.png
