@@ -31,11 +31,10 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      - name: Capture remaining screens with bundled Almarai
+      - name: Capture final screens with bundled Almarai
         run: >-
           flutter test test/screenshot_test.dart
           --dart-define=CAPTURE_SCREENSHOTS=true
-          --dart-define=CAPTURE_REMAINING=true
       - name: Build release APK
         run: >-
           flutter build apk --release
@@ -50,5 +49,5 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: meno-remaining-final-screenshots
+          name: meno-final-screenshots
           path: build/screenshots/*.png
