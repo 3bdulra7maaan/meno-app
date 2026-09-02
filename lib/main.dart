@@ -177,7 +177,7 @@ class _HomeShellState extends State<HomeShell> {
                       height: 54,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                      child: const Row(children: [Icon(Icons.search_rounded, color: navy), SizedBox(width: 10), Text('فتّش في تجارب الناس...', style: TextStyle(color: muted, fontSize: 15))]),
+                      child: const Row(children: [Icon(Icons.search_rounded, color: navy), SizedBox(width: 10), Expanded(child: Text('فتّش في تجارب الناس...', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 15)))]),
                     ),
                   ),
                 ],
@@ -186,7 +186,7 @@ class _HomeShellState extends State<HomeShell> {
             _categoryList(),
             const Padding(
               padding: EdgeInsets.fromLTRB(18, 14, 18, 4),
-              child: Row(children: [Text('أسئلة من المجتمع', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: ink)), Spacer(), Text('الأحدث', style: TextStyle(color: muted, fontWeight: FontWeight.w700))]),
+              child: Row(children: [Expanded(child: Text('أسئلة من المجتمع', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: ink))), SizedBox(width: 8), Text('الأحدث', style: TextStyle(color: muted, fontWeight: FontWeight.w700))]),
             ),
             _questionList(),
           ],
@@ -418,6 +418,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: category,
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'التصنيف'),
                 items: categories.skip(1).map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
                 onChanged: (value) => setState(() => category = value!),
