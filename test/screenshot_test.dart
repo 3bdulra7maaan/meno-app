@@ -102,6 +102,29 @@ void main() {
     await tester.tap(find.text('أفضل طريقة للتحويل من قطر للسودان شنو؟'));
     await tester.pumpAndSettle();
     await capture(tester, key, 'question-details');
+
+    await tester.showKeyboard(find.byKey(const Key('answer-field')));
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(() => tester.view.viewInsets = FakeViewPadding.zero);
+    await tester.pumpAndSettle();
+    final sendButton = find.byKey(const Key('answer-send-button'));
+    expect(sendButton, findsOneWidget);
+    expect(tester.getBottomRight(sendButton).dy, lessThanOrEqualTo(544));
+    expect(tester.takeException(), isNull);
+    await capture(tester, key, 'question-details-keyboard');
+
+    await tester.enterText(
+      find.byKey(const Key('answer-field')),
+      'إجابة اختبار من تجربة حقيقية',
+    );
+    await tester.tap(sendButton);
+    await tester.pumpAndSettle();
+    expect(find.text('إجابة اختبار من تجربة حقيقية'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    tester.view.viewInsets = FakeViewPadding.zero;
+    tester.testTextInput.hide();
+    await tester.pumpAndSettle();
     await tester.drag(find.byType(ListView).last, const Offset(0, -260));
     await tester.pumpAndSettle();
     await capture(tester, key, 'answers');
