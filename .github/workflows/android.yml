@@ -31,17 +31,11 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      - name: Capture Home with bundled Almarai
+      - name: Capture remaining screens with bundled Almarai
         run: >-
           flutter test test/screenshot_test.dart
-          --plain-name "captures home"
+          --plain-name "captures (search and categories|ask question|question details and answers|empty state|loading state|error state)"
           --dart-define=CAPTURE_SCREENSHOTS=true
-      - name: Expose Home PNG for visual verification
-        run: |
-          echo "HOME_PNG_BASE64_START"
-          base64 -w 0 build/screenshots/home.png
-          echo
-          echo "HOME_PNG_BASE64_END"
       - name: Build release APK
         run: >-
           flutter build apk --release
@@ -56,5 +50,5 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: meno-home-almarai-check
-          path: build/screenshots/home.png
+          name: meno-remaining-final-screenshots
+          path: build/screenshots/*.png
