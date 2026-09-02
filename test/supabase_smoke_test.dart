@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:meno/main.dart';
 
 void main() {
   const url = String.fromEnvironment('SUPABASE_URL');
@@ -8,7 +9,7 @@ void main() {
   test(
     'public feed and anonymous authentication reach Supabase',
     () async {
-      final client = SupabaseClient(url, key);
+      final client = SupabaseClient(normalizeSupabaseUrl(url), key);
       final rows = await client
           .from('questions')
           .select('id, status')
