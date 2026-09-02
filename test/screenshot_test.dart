@@ -94,7 +94,11 @@ void main() {
 
   testWidgets('captures error state', (tester) async {
     final key = GlobalKey();
-    await pumpPhone(tester, _StateRepository(Future.error(Exception('offline'))), key);
+    await pumpPhone(
+      tester,
+      _StateRepository(Future<List<Question>>.delayed(const Duration(milliseconds: 1), () => throw Exception('offline'))),
+      key,
+    );
     await tester.pumpAndSettle();
     await capture(tester, key, 'error-state');
   }, skip: !enabled);
