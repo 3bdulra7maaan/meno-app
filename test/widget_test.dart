@@ -55,4 +55,14 @@ void main() {
     expect(result.isHelpful, isTrue);
     expect(result.helpfulCount, before + 1);
   });
+
+  test('formats Arabic answer counts', () {
+    expect(answerCountLabel(0), 'لا توجد إجابات');
+    expect(answerCountLabel(1), 'إجابة واحدة');
+    expect(answerCountLabel(2), 'إجابتان');
+    expect(answerCountLabel(3), '3 إجابات');
+    expect(answerCountLabel(10), '10 إجابات');
+    expect(answerCountLabel(11), '11 إجابة');
+    expect(answerCountLabel(125), '125 إجابة');
+  });
 }
