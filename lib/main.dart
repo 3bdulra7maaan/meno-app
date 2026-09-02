@@ -422,7 +422,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
                       if (mounted) setState(() {});
                     } catch (_) {
                       if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(this.context).showSnackBar(
                         const SnackBar(content: Text('ما قدرنا نسجل «أفادني». حاول تاني.')),
                       );
                     }
