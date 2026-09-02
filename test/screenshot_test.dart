@@ -14,6 +14,7 @@ import 'package:meno/models/question.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const enabled = bool.fromEnvironment('CAPTURE_SCREENSHOTS');
+  const remainingOnly = bool.fromEnvironment('CAPTURE_REMAINING');
   const almaraiAssets = [
     'assets/fonts/Almarai-Light.ttf',
     'assets/fonts/Almarai-Regular.ttf',
@@ -74,7 +75,7 @@ void main() {
     await tester.runAsync(_expectArabicGlyphsAreNotTofu);
 
     await capture(tester, key, 'home');
-  }, skip: !enabled);
+  }, skip: !enabled || remainingOnly);
 
   testWidgets('captures search and categories', (tester) async {
     final key = GlobalKey();
