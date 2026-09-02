@@ -206,7 +206,7 @@ class _HomeShellState extends State<HomeShell> {
             ),
             const SizedBox(height: 6),
             _categoryList(),
-            Expanded(child: _questionList()),
+            Expanded(child: SingleChildScrollView(padding: const EdgeInsets.only(bottom: 20), child: _questionList())),
           ],
         ),
       );
@@ -313,7 +313,8 @@ class QuestionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFFF2C8), borderRadius: BorderRadius.circular(9)), child: Text(question.category, style: const TextStyle(color: navy, fontSize: 12, fontWeight: FontWeight.w800))),
+                  Flexible(child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFFF2C8), borderRadius: BorderRadius.circular(9)), child: Text(question.category, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: navy, fontSize: 12, fontWeight: FontWeight.w800)))),
+                  const SizedBox(width: 8),
                   const Spacer(),
                   Text(_timeAgo(question.createdAt), style: const TextStyle(color: Colors.black45, fontSize: 12)),
                 ]),
@@ -331,8 +332,6 @@ class QuestionCard extends StatelessWidget {
                   const Icon(Icons.chat_bubble_outline, size: 18, color: Colors.black54),
                   const SizedBox(width: 5),
                   Text('${question.answers.length} إجابة', style: const TextStyle(color: Colors.black54)),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.arrow_back_ios_new_rounded, size: 13, color: navy),
                 ]),
               ],
             ),
@@ -502,7 +501,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(color: Colors.white, border: Border.all(color: border), borderRadius: BorderRadius.circular(20)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFFF2C8), borderRadius: BorderRadius.circular(9)), child: Text(widget.question.category, style: const TextStyle(color: navy, fontSize: 12, fontWeight: FontWeight.w800))), const Spacer(), Text(_timeAgo(widget.question.createdAt), style: const TextStyle(color: muted, fontSize: 12))]),
+                Row(children: [Flexible(child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFFF2C8), borderRadius: BorderRadius.circular(9)), child: Text(widget.question.category, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: navy, fontSize: 12, fontWeight: FontWeight.w800)))), const SizedBox(width: 8), const Spacer(), Text(_timeAgo(widget.question.createdAt), style: const TextStyle(color: muted, fontSize: 12))]),
                 const SizedBox(height: 15),
                 Text(widget.question.title, style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 8),
@@ -568,8 +567,8 @@ class _AnswerCard extends StatelessWidget {
             Row(children: [
               const CircleAvatar(radius: 16, backgroundColor: navy, child: Icon(Icons.person, color: Colors.white, size: 18)),
               const SizedBox(width: 9),
-              Text(answer.author, style: const TextStyle(fontWeight: FontWeight.w700)),
-              const Spacer(),
+              Expanded(child: Text(answer.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700))),
+              const SizedBox(width: 8),
               Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFEAF0F4), borderRadius: BorderRadius.circular(9)), child: Text(answer.answerType, style: const TextStyle(color: navy, fontSize: 11.5, fontWeight: FontWeight.w700))),
             ]),
             const SizedBox(height: 12),
