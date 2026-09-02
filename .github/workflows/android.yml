@@ -31,8 +31,11 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      - name: Capture UI screenshots
-        run: flutter test test/screenshot_test.dart --dart-define=CAPTURE_SCREENSHOTS=true
+      - name: Capture Home with bundled Almarai
+        run: >-
+          flutter test test/screenshot_test.dart
+          --plain-name "captures home"
+          --dart-define=CAPTURE_SCREENSHOTS=true
       - name: Build release APK
         run: >-
           flutter build apk --release
@@ -47,5 +50,5 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: meno-ui-screenshots
-          path: build/screenshots/*.png
+          name: meno-home-almarai-check
+          path: build/screenshots/home.png
