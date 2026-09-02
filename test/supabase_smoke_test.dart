@@ -8,17 +8,17 @@ void main() {
   test(
     'public feed and anonymous authentication reach Supabase',
     () async {
-      await Supabase.initialize(url: url, publishableKey: key);
-      final rows = await Supabase.instance.client
+      final client = SupabaseClient(url, key);
+      final rows = await client
           .from('questions')
           .select('id, status')
           .eq('status', 'approved')
           .limit(1);
       expect(rows, isA<List<dynamic>>());
 
-      final auth = await Supabase.instance.client.auth.signInAnonymously();
+      final auth = await client.auth.signInAnonymously();
       expect(auth.user, isNotNull);
-      await Supabase.instance.client.auth.signOut();
+      await client.auth.signOut();
     },
     skip: url.isEmpty || key.isEmpty,
   );
