@@ -6,12 +6,15 @@ import 'data/question_repository.dart';
 import 'data/supabase_question_repository.dart';
 import 'models/question.dart';
 
-const navy = Color(0xFF102A43);
-const gold = Color(0xFFF6C344);
-const surface = Color(0xFFF8F7F3);
-const ink = Color(0xFF18232D);
-const muted = Color(0xFF64717D);
-const border = Color(0xFFE3E7E9);
+const primaryBlack = Color(0xFF121212);
+const warmGold = Color(0xFFD9A752);
+const darkGold = Color(0xFFC59243);
+const warmBeige = Color(0xFFE5C495);
+const secondaryBeige = Color(0xFFDEB887);
+const surface = Color(0xFFFAF9F6);
+const ink = primaryBlack;
+const muted = Color(0xFF68635C);
+const border = Color(0xFFE8E3DA);
 
 const categories = [
   'الكل',
@@ -66,11 +69,12 @@ class MenoApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'Meno',
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: navy, primary: navy, secondary: gold, surface: Colors.white),
+          fontFamily: 'Almarai',
+          colorScheme: ColorScheme.fromSeed(seedColor: primaryBlack, primary: primaryBlack, secondary: warmGold, surface: Colors.white),
           scaffoldBackgroundColor: surface,
           useMaterial3: true,
           textTheme: const TextTheme(
-            headlineSmall: TextStyle(fontSize: 24, height: 1.4, fontWeight: FontWeight.w900, color: ink),
+            headlineSmall: TextStyle(fontSize: 24, height: 1.4, fontWeight: FontWeight.w800, color: ink),
             titleLarge: TextStyle(fontSize: 19, height: 1.5, fontWeight: FontWeight.w800, color: ink),
             bodyLarge: TextStyle(fontSize: 16, height: 1.7, color: ink),
             bodyMedium: TextStyle(fontSize: 14, height: 1.6, color: muted),
@@ -81,9 +85,9 @@ class MenoApp extends StatelessWidget {
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: border)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: border)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: navy, width: 1.5)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: darkGold, width: 1.5)),
           ),
-          snackBarTheme: const SnackBarThemeData(backgroundColor: navy, behavior: SnackBarBehavior.floating),
+          snackBarTheme: const SnackBarThemeData(backgroundColor: primaryBlack, behavior: SnackBarBehavior.floating),
         ),
         builder: (context, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
         home: HomeShell(repository: repository),
@@ -141,10 +145,10 @@ class _HomeShellState extends State<HomeShell> {
           textDirection: TextDirection.ltr,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Meno', style: TextStyle(color: navy, fontWeight: FontWeight.w900, fontSize: 28, letterSpacing: -1.2)),
+            const Text('Meno', style: TextStyle(color: primaryBlack, fontWeight: FontWeight.w800, fontSize: 28, letterSpacing: -1.2)),
             FilledButton.icon(
               onPressed: openAsk,
-              style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: navy, minimumSize: const Size(94, 46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+              style: FilledButton.styleFrom(backgroundColor: warmGold, foregroundColor: primaryBlack, minimumSize: const Size(94, 46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
               icon: const Icon(Icons.add, size: 19),
               label: const Text('اسأل', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
@@ -156,7 +160,7 @@ class _HomeShellState extends State<HomeShell> {
         height: 70,
         backgroundColor: Colors.white,
         selectedIndex: index,
-        indicatorColor: gold.withValues(alpha: .45),
+        indicatorColor: warmGold.withValues(alpha: .45),
         onDestinationSelected: (value) => setState(() => index = value),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'الرئيسية'),
@@ -173,14 +177,14 @@ class _HomeShellState extends State<HomeShell> {
           padding: const EdgeInsets.only(bottom: 20),
           children: [
             Container(
-              decoration: const BoxDecoration(color: navy, borderRadius: BorderRadius.only(bottomLeft: Radius.circular(26), bottomRight: Radius.circular(26))),
+              decoration: const BoxDecoration(color: primaryBlack, borderRadius: BorderRadius.only(bottomLeft: Radius.circular(26), bottomRight: Radius.circular(26))),
               padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('اسأل زول جرّب', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)),
+                  const Text('اسأل زول جرّب', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 5),
-                  const Text('إجابات قريبة منك، من ناس عندهم تجربة حقيقية.', style: TextStyle(color: Color(0xFFD7E3EC), fontSize: 15)),
+                  const Text('إجابات قريبة منك، من ناس عندهم تجربة حقيقية.', style: TextStyle(color: Color(0xFFF2E9DA), fontSize: 15)),
                   const SizedBox(height: 18),
                   InkWell(
                     onTap: () => setState(() => index = 1),
@@ -189,7 +193,7 @@ class _HomeShellState extends State<HomeShell> {
                       height: 54,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                      child: const Row(children: [Icon(Icons.search_rounded, color: navy), SizedBox(width: 10), Expanded(child: Text('فتّش في تجارب الناس...', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 15)))]),
+                      child: const Row(children: [Icon(Icons.search_rounded, color: primaryBlack), SizedBox(width: 10), Expanded(child: Text('فتّش في تجارب الناس...', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 15)))]),
                     ),
                   ),
                 ],
@@ -198,7 +202,7 @@ class _HomeShellState extends State<HomeShell> {
             _categoryList(),
             const Padding(
               padding: EdgeInsets.fromLTRB(18, 14, 18, 4),
-              child: Row(children: [Expanded(child: Text('أسئلة من المجتمع', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: ink))), SizedBox(width: 8), Text('الأحدث', style: TextStyle(color: muted, fontWeight: FontWeight.w700))]),
+              child: Row(children: [Expanded(child: Text('أسئلة من المجتمع', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: ink))), SizedBox(width: 8), Text('الأحدث', style: TextStyle(color: muted, fontWeight: FontWeight.w700))]),
             ),
             _questionList(),
           ],
@@ -237,9 +241,9 @@ class _HomeShellState extends State<HomeShell> {
               selected: selected,
               showCheckmark: false,
               backgroundColor: Colors.white,
-              selectedColor: navy,
-              side: BorderSide(color: selected ? navy : border),
-              labelStyle: TextStyle(color: selected ? Colors.white : ink, fontWeight: FontWeight.w700),
+              selectedColor: warmGold,
+              side: BorderSide(color: selected ? darkGold : border),
+              labelStyle: const TextStyle(color: primaryBlack, fontWeight: FontWeight.w700),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
               onSelected: (_) => setState(() => category = categories[i]),
             );
@@ -257,9 +261,9 @@ class _HomeShellState extends State<HomeShell> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(width: 72, height: 72, decoration: const BoxDecoration(color: Color(0xFFFFE9A8), shape: BoxShape.circle), child: const Icon(Icons.wifi_off_rounded, size: 34, color: navy)),
+                  Container(width: 72, height: 72, decoration: BoxDecoration(color: warmBeige.withValues(alpha: .52), shape: BoxShape.circle), child: const Icon(Icons.wifi_off_rounded, size: 34, color: primaryBlack)),
                   const SizedBox(height: 18),
-                  const Text('الاتصال ما زبط', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: ink)),
+                  const Text('الاتصال ما زبط', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: ink)),
                   const SizedBox(height: 7),
                   const Text('اتأكد من الإنترنت وحاول تاني. أسئلتك وتجاربك ما حتضيع.', textAlign: TextAlign.center, style: TextStyle(color: muted, height: 1.6)),
                   const SizedBox(height: 14),
@@ -281,9 +285,9 @@ class _HomeShellState extends State<HomeShell> {
               key: const Key('empty-state'),
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 42),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Container(width: 72, height: 72, decoration: const BoxDecoration(color: Color(0xFFEAF0F4), shape: BoxShape.circle), child: const Icon(Icons.search_off_rounded, size: 34, color: navy)),
+                Container(width: 72, height: 72, decoration: const BoxDecoration(color: Color(0xFFF2EDE5), shape: BoxShape.circle), child: const Icon(Icons.search_off_rounded, size: 34, color: primaryBlack)),
                 const SizedBox(height: 18),
-                const Text('ما لقينا نتيجة مطابقة', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: ink)),
+                const Text('ما لقينا نتيجة مطابقة', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: ink)),
                 const SizedBox(height: 7),
                 const Text('جرّب كلمة أقصر أو اختار «الكل».', style: TextStyle(color: muted)),
                 const SizedBox(height: 14),
@@ -325,7 +329,7 @@ class QuestionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  Flexible(child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFFF2C8), borderRadius: BorderRadius.circular(9)), child: Text(question.category, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: navy, fontSize: 12, fontWeight: FontWeight.w800)))),
+                  Flexible(child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFF5EBDD), borderRadius: BorderRadius.circular(9)), child: Text(question.category, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: primaryBlack, fontSize: 12, fontWeight: FontWeight.w800)))),
                   const SizedBox(width: 8),
                   const Spacer(),
                   Text(_timeAgo(question.createdAt), style: const TextStyle(color: Colors.black45, fontSize: 12)),
@@ -338,7 +342,7 @@ class QuestionCard extends StatelessWidget {
                 const Divider(height: 1, color: border),
                 const SizedBox(height: 11),
                 Row(children: [
-                  CircleAvatar(radius: 14, backgroundColor: const Color(0xFFEAF0F4), child: Text(question.author.characters.first, style: const TextStyle(color: navy, fontSize: 12, fontWeight: FontWeight.w800))),
+                  CircleAvatar(radius: 14, backgroundColor: const Color(0xFFF2EDE5), child: Text(question.author.characters.first, style: const TextStyle(color: primaryBlack, fontSize: 12, fontWeight: FontWeight.w800))),
                   const SizedBox(width: 8),
                   Expanded(child: Text(question.author, style: const TextStyle(fontWeight: FontWeight.w700, color: ink, fontSize: 13))),
                   const Icon(Icons.chat_bubble_outline, size: 18, color: Colors.black54),
@@ -406,13 +410,13 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(color: const Color(0xFFFFF2C8), borderRadius: BorderRadius.circular(18)),
+                decoration: BoxDecoration(color: warmBeige.withValues(alpha: .28), borderRadius: BorderRadius.circular(18)),
                 child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(Icons.lightbulb_outline_rounded, color: navy), SizedBox(width: 12),
+                  Icon(Icons.lightbulb_outline_rounded, color: primaryBlack), SizedBox(width: 12),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('خلي سؤالك واضح ومحدد', style: TextStyle(fontWeight: FontWeight.w900, color: navy, fontSize: 16)),
+                    Text('خلي سؤالك واضح ومحدد', style: TextStyle(fontWeight: FontWeight.w800, color: primaryBlack, fontSize: 16)),
                     SizedBox(height: 3),
-                    Text('قول للناس شنو جرّبت وشنو بالضبط الداير تعرفو.', style: TextStyle(color: Color(0xFF5D512B), height: 1.55)),
+                    Text('قول للناس شنو جرّبت وشنو بالضبط الداير تعرفو.', style: TextStyle(color: Color(0xFF67583F), height: 1.55)),
                   ])),
                 ]),
               ),
@@ -442,8 +446,8 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
                 child: SwitchListTile(
                   minTileHeight: 72,
                   value: anonymous,
-                  activeThumbColor: navy,
-                  secondary: const Icon(Icons.visibility_off_outlined, color: navy),
+                  activeThumbColor: darkGold,
+                  secondary: const Icon(Icons.visibility_off_outlined, color: primaryBlack),
                   title: const Text('اسأل كمجهول', style: TextStyle(fontWeight: FontWeight.w800)),
                   subtitle: const Text('اسمك ما حيظهر مع السؤال'),
                   onChanged: (value) => setState(() => anonymous = value),
@@ -453,7 +457,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
               FilledButton(
                 key: const Key('submit-question-button'),
                 onPressed: saving ? null : submit,
-                style: FilledButton.styleFrom(backgroundColor: navy, minimumSize: const Size.fromHeight(54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                style: FilledButton.styleFrom(backgroundColor: warmGold, foregroundColor: primaryBlack, minimumSize: const Size.fromHeight(54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                 child: Text(saving ? 'جاري الإرسال...' : 'أرسل للمراجعة', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 10),
@@ -515,19 +519,19 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(color: Colors.white, border: Border.all(color: border), borderRadius: BorderRadius.circular(20)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [Flexible(child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFFF2C8), borderRadius: BorderRadius.circular(9)), child: Text(widget.question.category, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: navy, fontSize: 12, fontWeight: FontWeight.w800)))), const SizedBox(width: 8), const Spacer(), Text(_timeAgo(widget.question.createdAt), style: const TextStyle(color: muted, fontSize: 12))]),
+                Row(children: [Flexible(child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFF5EBDD), borderRadius: BorderRadius.circular(9)), child: Text(widget.question.category, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: primaryBlack, fontSize: 12, fontWeight: FontWeight.w800)))), const SizedBox(width: 8), const Spacer(), Text(_timeAgo(widget.question.createdAt), style: const TextStyle(color: muted, fontSize: 12))]),
                 const SizedBox(height: 15),
                 Text(widget.question.title, style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 8),
                 Text(widget.question.body, style: Theme.of(context).textTheme.bodyLarge),
                 const SizedBox(height: 16),
                 const Divider(color: border),
-                Row(children: [const CircleAvatar(radius: 15, backgroundColor: Color(0xFFEAF0F4), child: Icon(Icons.person_outline_rounded, size: 17, color: navy)), const SizedBox(width: 8), Text(widget.question.author, style: const TextStyle(fontWeight: FontWeight.w700, color: ink))]),
+                Row(children: [const CircleAvatar(radius: 15, backgroundColor: Color(0xFFF2EDE5), child: Icon(Icons.person_outline_rounded, size: 17, color: primaryBlack)), const SizedBox(width: 8), Text(widget.question.author, style: const TextStyle(fontWeight: FontWeight.w700, color: ink))]),
               ]),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-              child: Text('الإجابات (${widget.question.answers.length})', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: ink)),
+              child: Text('الإجابات (${widget.question.answers.length})', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: ink)),
             ),
             ...widget.question.answers.map((item) => _AnswerCard(
                   answer: item,
@@ -557,7 +561,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
             child: Row(children: [
               Expanded(child: TextField(key: const Key('answer-field'), controller: answer, minLines: 1, maxLines: 4, decoration: const InputDecoration(hintText: 'شارك تجربة أو معلومة مفيدة...'))),
               const SizedBox(width: 8),
-              IconButton.filled(onPressed: addAnswer, style: IconButton.styleFrom(backgroundColor: navy), icon: const Icon(Icons.send)),
+              IconButton.filled(onPressed: addAnswer, style: IconButton.styleFrom(backgroundColor: primaryBlack), icon: const Icon(Icons.send)),
             ]),
           ),
         ),
@@ -579,18 +583,18 @@ class _AnswerCard extends StatelessWidget {
           padding: const EdgeInsets.all(17),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              const CircleAvatar(radius: 16, backgroundColor: navy, child: Icon(Icons.person, color: Colors.white, size: 18)),
+              const CircleAvatar(radius: 16, backgroundColor: primaryBlack, child: Icon(Icons.person, color: Colors.white, size: 18)),
               const SizedBox(width: 9),
               Expanded(child: Text(answer.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700))),
               const SizedBox(width: 8),
-              Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFEAF0F4), borderRadius: BorderRadius.circular(9)), child: Text(answer.answerType, style: const TextStyle(color: navy, fontSize: 11.5, fontWeight: FontWeight.w700))),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: secondaryBeige.withValues(alpha: .28), borderRadius: BorderRadius.circular(9)), child: Text(answer.answerType, style: const TextStyle(color: primaryBlack, fontSize: 11.5, fontWeight: FontWeight.w700))),
             ]),
             const SizedBox(height: 12),
             Text(answer.body, style: const TextStyle(fontSize: 15, height: 1.6)),
             const SizedBox(height: 10),
             TextButton.icon(
               onPressed: onHelpful,
-              style: TextButton.styleFrom(foregroundColor: answer.isHelpful ? navy : Colors.black54, backgroundColor: answer.isHelpful ? gold.withValues(alpha: .25) : null),
+              style: TextButton.styleFrom(foregroundColor: answer.isHelpful ? primaryBlack : Colors.black54, backgroundColor: answer.isHelpful ? warmGold.withValues(alpha: .25) : null),
               icon: Icon(answer.isHelpful ? Icons.thumb_up : Icons.thumb_up_outlined, size: 18),
               label: Text('أفادني  ${answer.helpfulCount}'),
             ),
@@ -612,7 +616,7 @@ class _FieldLabel extends StatelessWidget {
   final String title;
   @override
   Widget build(BuildContext context) => Row(children: [
-    CircleAvatar(radius: 13, backgroundColor: navy, child: Text(number, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800))),
+    CircleAvatar(radius: 13, backgroundColor: primaryBlack, child: Text(number, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800))),
     const SizedBox(width: 9),
     Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: ink)),
   ]);
@@ -622,8 +626,8 @@ class _SubmissionDialog extends StatelessWidget {
   const _SubmissionDialog();
   @override
   Widget build(BuildContext context) => AlertDialog(
-    icon: Container(width: 70, height: 70, decoration: const BoxDecoration(color: Color(0xFFFFE9A8), shape: BoxShape.circle), child: const Icon(Icons.check_rounded, size: 38, color: navy)),
-    title: const Text('وصلنا سؤالك', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, color: navy)),
+    icon: Container(width: 70, height: 70, decoration: const BoxDecoration(color: warmBeige, shape: BoxShape.circle), child: const Icon(Icons.check_rounded, size: 38, color: primaryBlack)),
+    title: const Text('وصلنا سؤالك', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w800, color: primaryBlack)),
     content: const Text('سؤالك الآن في المراجعة، وحيظهر للمجتمع أول ما يتم اعتماده.', textAlign: TextAlign.center),
     actionsAlignment: MainAxisAlignment.center,
     actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('تمام'))],
@@ -634,8 +638,8 @@ class _AboutPage extends StatelessWidget {
   const _AboutPage();
   @override
   Widget build(BuildContext context) => ListView(padding: const EdgeInsets.all(24), children: [
-    const Text('Meno', textDirection: TextDirection.ltr, style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: navy)),
-    const Text('اسأل زول جرّب', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: ink)),
+    const Text('Meno', textDirection: TextDirection.ltr, style: TextStyle(fontSize: 38, fontWeight: FontWeight.w800, color: primaryBlack)),
+    const Text('اسأل زول جرّب', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: ink)),
     const SizedBox(height: 18),
     Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: border), borderRadius: BorderRadius.circular(18)), child: const Text('مينو مجتمع سوداني بسيط للأسئلة والأجوبة المبنية على التجارب الحقيقية. هدفنا نخلي الوصول للمعلومة العملية أسهل وأقرب.', style: TextStyle(fontSize: 16, height: 1.7, color: ink))),
   ]);
@@ -651,7 +655,7 @@ class _LoadingFeed extends StatelessWidget {
       height: 155,
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(color: Colors.white, border: Border.all(color: border), borderRadius: BorderRadius.circular(18)),
-      child: const Center(child: SizedBox(width: 26, height: 26, child: CircularProgressIndicator(strokeWidth: 2, color: navy))),
+      child: const Center(child: SizedBox(width: 26, height: 26, child: CircularProgressIndicator(strokeWidth: 2, color: primaryBlack))),
     ))),
   );
 }
