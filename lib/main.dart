@@ -33,7 +33,8 @@ const categories = [
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  const url = String.fromEnvironment('SUPABASE_URL');
+  const rawUrl = String.fromEnvironment('SUPABASE_URL');
+  final url = normalizeSupabaseUrl(rawUrl);
   const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
   if (url.isNotEmpty && anonKey.isNotEmpty) {
     await Supabase.initialize(url: url, publishableKey: anonKey);
@@ -42,6 +43,17 @@ Future<void> main() async {
       ? SupabaseQuestionRepository(Supabase.instance.client)
       : InMemoryQuestionRepository();
   runApp(MenoApp(repository: repository));
+}
+
+String normalizeSupabaseUrl(String value) {
+  var url = value.trim();
+  while (url.endsWith('/')) {
+    url = url.substring(0, url.length - 1);
+  }
+  if (url.endsWith('/rest/v1')) {
+    url = url.substring(0, url.length - '/rest/v1'.length);
+  }
+  return url;
 }
 
 class MenoApp extends StatelessWidget {
