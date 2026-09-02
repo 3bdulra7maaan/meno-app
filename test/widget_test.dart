@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:meno/data/in_memory_question_repository.dart';
 import 'package:meno/main.dart';
 import 'package:meno/models/question.dart';
@@ -11,6 +12,19 @@ void main() {
     expect(find.text('Meno'), findsOneWidget);
     expect(find.text('اسأل زول جرّب'), findsOneWidget);
     expect(find.text('اسأل'), findsOneWidget);
+    expect(
+      Theme.of(tester.element(find.text('Meno'))).textTheme.bodyMedium?.fontFamily,
+      'Almarai',
+    );
+
+    for (final asset in [
+      'assets/fonts/Almarai-Light.ttf',
+      'assets/fonts/Almarai-Regular.ttf',
+      'assets/fonts/Almarai-Bold.ttf',
+      'assets/fonts/Almarai-ExtraBold.ttf',
+    ]) {
+      expect((await rootBundle.load(asset)).lengthInBytes, greaterThan(0));
+    }
   });
 
   test('new questions stay pending until moderation', () async {
