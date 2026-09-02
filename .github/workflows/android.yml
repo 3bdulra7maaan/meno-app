@@ -23,6 +23,14 @@ jobs:
       - run: dart format lib test
       - run: flutter analyze
       - run: flutter test
+      - name: Verify Supabase public data flow
+        run: >-
+          flutter test test/supabase_smoke_test.dart
+          --dart-define=SUPABASE_URL="$SUPABASE_URL"
+          --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       - name: Capture UI screenshots
         run: flutter test test/screenshot_test.dart --dart-define=CAPTURE_SCREENSHOTS=true
       - name: Build release APK
