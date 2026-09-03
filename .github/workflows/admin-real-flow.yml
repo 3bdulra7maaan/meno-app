@@ -23,10 +23,12 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           test -n "$SUPABASE_URL" && test -n "$SUPABASE_ANON_KEY"
+          SUPABASE_BASE_URL="${SUPABASE_URL%/}"
+          SUPABASE_BASE_URL="${SUPABASE_BASE_URL%/rest/v1}"
           mkdir -p dist/admin dist/assets/fonts
           cp admin/index.html admin/styles.css admin/app.js dist/admin/
           cp assets/fonts/Almarai-*.ttf dist/assets/fonts/
-          printf "window.MENO_CONFIG = { supabaseUrl: '%s', supabaseAnonKey: '%s' };\n" "$SUPABASE_URL" "$SUPABASE_ANON_KEY" > dist/admin/config.js
+          printf "window.MENO_CONFIG = { supabaseUrl: '%s', supabaseAnonKey: '%s' };\n" "$SUPABASE_BASE_URL" "$SUPABASE_ANON_KEY" > dist/admin/config.js
       - name: Verify real moderation flow
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
