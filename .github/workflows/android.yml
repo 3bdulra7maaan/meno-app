@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, feature/supabase-phase-2]
   workflow_dispatch:
 
 jobs:
@@ -23,6 +23,18 @@ jobs:
       - run: dart format lib test
       - run: flutter analyze
       - run: flutter test
+      - name: Verify Supabase public data flow
+        run: >-
+          flutter test test/supabase_smoke_test.dart
+          --dart-define=SUPABASE_URL="$SUPABASE_URL"
+          --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      - name: Capture final screens with bundled Almarai
+        run: >-
+          flutter test test/screenshot_test.dart
+          --dart-define=CAPTURE_SCREENSHOTS=true
       - name: Build release APK
         run: >-
           flutter build apk --release
@@ -35,3 +47,7 @@ jobs:
         with:
           name: meno-android-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meno-final-screenshots
+          path: build/screenshots/*.png
