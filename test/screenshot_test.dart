@@ -97,7 +97,10 @@ void main() {
 
   testWidgets('captures question details and answers', (tester) async {
     final key = GlobalKey();
-    await pumpPhone(tester, InMemoryQuestionRepository(), key);
+    final repository = InMemoryQuestionRepository();
+    final initialAnswerCount =
+        (await repository.approvedQuestions()).first.answers.length;
+    await pumpPhone(tester, repository, key);
     await tester.pumpAndSettle();
     await tester.tap(find.text('أفضل طريقة للتحويل من قطر للسودان شنو؟'));
     await tester.pumpAndSettle();
@@ -117,9 +120,18 @@ void main() {
       find.byKey(const Key('answer-field')),
       'إجابة اختبار من تجربة حقيقية',
     );
-    await tester.tap(sendButton);
+    await tester.tapAt(tester.getCenter(sendButton));
     await tester.pumpAndSettle();
-    expect(find.text('إجابة اختبار من تجربة حقيقية'), findsOneWidget);
+    final answerField = tester.widget<TextField>(
+      find.byKey(const Key('answer-field')),
+    );
+    expect(answerField.controller?.text, isEmpty);
+    final updatedQuestion = (await repository.approvedQuestions()).first;
+    expect(updatedQuestion.answers, hasLength(initialAnswerCount + 1));
+    expect(
+      updatedQuestion.answers.last.body,
+      'إجابة اختبار من تجربة حقيقية',
+    );
     expect(tester.takeException(), isNull);
 
     tester.view.viewInsets = FakeViewPadding.zero;
