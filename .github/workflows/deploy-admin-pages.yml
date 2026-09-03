@@ -1,0 +1,60 @@
+name: Build Meno Admin Pages bundle
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/admin-v1]
+    paths:
+      - admin/**
+      - assets/fonts/**
+      - .github/workflows/deploy-admin-pages.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Admin v1
+        uses: actions/checkout@v5
+        with:
+          ref: feature/admin-v1
+          path: app
+
+      - name: Check out official website
+        uses: actions/checkout@v5
+        with:
+          ref: website/official-site
+          path: official-site
+
+      - name: Build safe Pages bundle
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_ANON_KEY"
+          SUPABASE_BASE_URL="${SUPABASE_URL%/}"
+          SUPABASE_BASE_URL="${SUPABASE_BASE_URL%/rest/v1}"
+
+          mkdir -p dist/admin dist/assets/fonts
+          cp -R official-site/docs/. dist/
+          cp app/admin/index.html app/admin/styles.css app/admin/app.js dist/admin/
+          cp app/assets/fonts/Almarai-*.ttf dist/assets/fonts/
+          printf "window.MENO_CONFIG = { supabaseUrl: '%s', supabaseAnonKey: '%s' };\n" \
+            "$SUPABASE_BASE_URL" "$SUPABASE_ANON_KEY" > dist/admin/config.js
+          touch dist/.nojekyll
+
+          test ! -e dist/admin/real_flow_smoke.mjs
+          ! grep -R --fixed-strings "SUPABASE_ADMIN_EMAIL" dist
+          ! grep -R --fixed-strings "SUPABASE_ADMIN_PASSWORD" dist
+          ! grep -R --fixed-strings "service_role" dist
+
+      - name: Upload safe preview bundle
+        uses: actions/upload-artifact@v5
+        with:
+          name: meno-admin-pages-preview
+          path: dist
+          retention-days: 7

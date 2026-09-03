@@ -10,3 +10,4 @@ android/local.properties
 *.iml
 .idea/
 .vscode/
+admin/config.js
