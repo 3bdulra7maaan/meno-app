@@ -3,7 +3,7 @@ for (const name of required) {
   if (!process.env[name]) throw new Error(`Missing required environment variable: ${name}`);
 }
 
-const url = process.env.SUPABASE_URL.replace(/\/$/, '');
+const url = process.env.SUPABASE_URL.replace(/\/$/, '').replace(/\/rest\/v1$/, '');
 const key = process.env.SUPABASE_ANON_KEY;
 const headers = (token, extra = {}) => ({ apikey: key, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...extra });
 async function request(path, options = {}) {
