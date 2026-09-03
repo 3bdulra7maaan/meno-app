@@ -2,6 +2,11 @@ name: Admin real flow
 
 on:
   workflow_dispatch:
+  push:
+    branches: [feature/admin-v1]
+    paths:
+      - admin/**
+      - .github/workflows/admin-real-flow.yml
 
 jobs:
   verify:
