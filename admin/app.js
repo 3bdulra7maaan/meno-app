@@ -46,7 +46,7 @@ function renderDashboard(m,a){
 async function loadQuestions(status){
   $('questions-title').textContent=`الأسئلة — ${labels[status]}`;$('questions-list').innerHTML='<p class="meta">جارٍ التحميل…</p>';
   if(demo){renderQuestions(demoData.questions.filter((q)=>q.status===status));return}
-  const {data,error}=await client.from('questions').select('id,title,body,category,author_name,is_anonymous,status,created_at,answers(id,body,answer_type,author_name,is_hidden,created_at)').eq('status',status).order('created_at',{ascending:false});
+  const {data,error}=await client.from('questions').select('id,title,body,category,author_name,is_anonymous,status,created_at,answers(id,body,author_name,is_hidden,created_at)').eq('status',status).order('created_at',{ascending:false});
   if(error){toast('تعذر تحميل الأسئلة');return}renderQuestions(data)
 }
 function renderQuestions(rows){
@@ -56,7 +56,7 @@ function renderQuestions(rows){
   document.querySelectorAll('[data-status]').forEach((b)=>b.onclick=()=>setQuestionStatus(b.dataset.id,b.dataset.status));
 }
 function openQuestion(q){
-  const answers=(q.answers||[]).map((a)=>`<div class="answer"><b>${esc(a.answer_type||'إجابة')}</b><p>${esc(a.body)}</p><small class="meta">${esc(a.author_name||'مستخدم')} · ${a.is_hidden?'مخفية':'ظاهرة'}</small><div class="actions"><button class="quiet" data-answer="${a.id}" data-hidden="${!a.is_hidden}">${a.is_hidden?'إظهار الإجابة':'إخفاء الإجابة'}</button></div></div>`).join('')||'<p class="meta">لا توجد إجابات.</p>';
+  const answers=(q.answers||[]).map((a)=>`<div class="answer"><b>إجابة</b><p>${esc(a.body)}</p><small class="meta">${esc(a.author_name||'مستخدم')} · ${a.is_hidden?'مخفية':'ظاهرة'}</small><div class="actions"><button class="quiet" data-answer="${a.id}" data-hidden="${!a.is_hidden}">${a.is_hidden?'إظهار الإجابة':'إخفاء الإجابة'}</button></div></div>`).join('')||'<p class="meta">لا توجد إجابات.</p>';
   $('question-detail').innerHTML=`<span class="status">${labels[q.status]}</span><h1>${esc(q.title)}</h1><p>${esc(q.body)}</p><div class="meta">${esc(q.category)} · ${q.is_anonymous?'مجهول':esc(q.author_name||'مستخدم')}</div><h2>الإجابات</h2>${answers}`;
   document.querySelectorAll('[data-answer]').forEach((b)=>b.onclick=()=>setAnswerHidden(b.dataset.answer,b.dataset.hidden==='true',q));$('question-dialog').showModal();
 }
