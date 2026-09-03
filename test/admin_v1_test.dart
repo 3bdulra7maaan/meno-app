@@ -16,7 +16,7 @@ void main() {
 
     final dashboard = files.map((file) => file.readAsStringSync()).join('\n');
     expect(dashboard, contains('is_meno_admin'));
-    expect(dashboard, contains("signInWithPassword"));
+    expect(dashboard, contains('signInWithPassword'));
     expect(dashboard.toLowerCase(), isNot(contains('service_role')));
   });
 
