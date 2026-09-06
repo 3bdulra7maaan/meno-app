@@ -14,7 +14,10 @@ void main() {
     expect(find.text('اسأل زول جرّب'), findsOneWidget);
     expect(find.text('اسأل'), findsNWidgets(2));
     expect(
-      Theme.of(tester.element(find.text('Meno'))).textTheme.bodyMedium?.fontFamily,
+      Theme.of(tester.element(find.text('Meno')))
+          .textTheme
+          .bodyMedium
+          ?.fontFamily,
       'Almarai',
     );
 

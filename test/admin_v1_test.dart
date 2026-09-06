@@ -21,9 +21,8 @@ void main() {
   });
 
   test('migration enforces admin RLS and privacy-minimal analytics', () {
-    final sql = File(
-      'supabase/migrations/202609030001_admin_analytics.sql',
-    ).readAsStringSync();
+    final sql = File('supabase/migrations/202609030001_admin_analytics.sql')
+        .readAsStringSync();
 
     expect(sql, contains('enable row level security'));
     expect(sql, contains('public.is_meno_admin()'));
