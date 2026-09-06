@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/question.dart';
 import 'question_repository.dart';
+import 'question_search.dart';
 
 class SupabaseQuestionRepository implements QuestionRepository {
   SupabaseQuestionRepository(this._client);
@@ -14,6 +15,29 @@ class SupabaseQuestionRepository implements QuestionRepository {
         .from('questions')
         .select('*, answers(*, helpful_votes(user_id))')
         .eq('status', 'approved')
+        .order('created_at', ascending: false);
+    return rows.map(_questionFromMap).toList();
+  }
+
+  @override
+  Future<List<Question>> searchApprovedQuestions({
+    required String query,
+    required String category,
+  }) async =>
+      filterApprovedQuestions(
+        await approvedQuestions(),
+        query: query,
+        category: category,
+      );
+
+  @override
+  Future<List<Question>> currentUserQuestions() async {
+    final user = _client.auth.currentUser;
+    if (user == null) return const [];
+    final rows = await _client
+        .from('questions')
+        .select('*, answers(*, helpful_votes(user_id))')
+        .eq('user_id', user.id)
         .order('created_at', ascending: false);
     return rows.map(_questionFromMap).toList();
   }
@@ -68,11 +92,7 @@ class SupabaseQuestionRepository implements QuestionRepository {
   }) async {
     await _ensureAnonymousSession();
     final row = await _client
-        .rpc(
-          'toggle_helpful',
-          params: {'answer_id_input': answerId},
-        )
-        .single();
+        .rpc('toggle_helpful', params: {'answer_id_input': answerId}).single();
     return HelpfulVoteResult(
       isHelpful: row['is_helpful'] as bool,
       helpfulCount: row['helpful_count'] as int,
