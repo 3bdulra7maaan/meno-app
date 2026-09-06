@@ -3,6 +3,13 @@ import '../models/question.dart';
 abstract class QuestionRepository {
   Future<List<Question>> approvedQuestions();
 
+  Future<List<Question>> searchApprovedQuestions({
+    required String query,
+    required String category,
+  });
+
+  Future<List<Question>> currentUserQuestions();
+
   Future<Question> submitQuestion({
     required String title,
     required String body,
