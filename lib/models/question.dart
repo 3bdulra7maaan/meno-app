@@ -8,6 +8,7 @@ class Answer {
     required this.createdAt,
     this.helpfulCount = 0,
     this.isHelpful = false,
+    this.answerType = 'تجربة شخصية',
   });
 
   final String id;
@@ -16,6 +17,17 @@ class Answer {
   final DateTime createdAt;
   int helpfulCount;
   bool isHelpful;
+  final String answerType;
+}
+
+class HelpfulVoteResult {
+  const HelpfulVoteResult({
+    required this.isHelpful,
+    required this.helpfulCount,
+  });
+
+  final bool isHelpful;
+  final int helpfulCount;
 }
 
 class Question {
