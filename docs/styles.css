@@ -1,15 +1,18 @@
+@font-face { font-family: Almarai; src: url('assets/fonts/Almarai-Regular.ttf'); font-weight: 400; font-display: swap; }
+@font-face { font-family: Almarai; src: url('assets/fonts/Almarai-Bold.ttf'); font-weight: 700; font-display: swap; }
+@font-face { font-family: Almarai; src: url('assets/fonts/Almarai-ExtraBold.ttf'); font-weight: 800; font-display: swap; }
 :root {
-  --navy: #102a43;
-  --navy-soft: #183b5b;
-  --gold: #f6c344;
-  --gold-soft: #fff6d8;
-  --ink: #17212b;
-  --muted: #5f6f7f;
-  --surface: #f6f8fa;
+  --navy: #121212;
+  --navy-soft: #121212;
+  --gold: #D9A752;
+  --gold-soft: #f5ebdd;
+  --ink: #121212;
+  --muted: #68635c;
+  --surface: #faf9f6;
   --white: #ffffff;
   --border: #dce3e9;
   --radius: 22px;
-  --shadow: 0 20px 55px rgba(16, 42, 67, 0.1);
+  --shadow: none;
 }
 
 * { box-sizing: border-box; }
@@ -20,7 +23,7 @@ body {
   margin: 0;
   color: var(--ink);
   background: var(--surface);
-  font-family: Tahoma, Arial, sans-serif;
+  font-family: Almarai, Arial, sans-serif;
   line-height: 1.8;
   -webkit-font-smoothing: antialiased;
 }
@@ -236,7 +239,7 @@ h1 {
 .site-footer {
   padding: 30px 0;
   color: #b9c8d5;
-  background: #0b2237;
+  background: #121212;
 }
 
 .footer-row {

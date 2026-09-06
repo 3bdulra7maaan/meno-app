@@ -1,5 +1,6 @@
 const config = window.MENO_CONFIG || {};
-const demo = new URLSearchParams(location.search).has('demo');
+// Demo fixtures may be used locally, never on the deployed production host.
+const demo = ['localhost', '127.0.0.1'].includes(location.hostname) && new URLSearchParams(location.search).has('demo');
 let client = null;
 const $ = (id) => document.getElementById(id);
 const esc = (value = '') => String(value).replace(/[&<>'"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));

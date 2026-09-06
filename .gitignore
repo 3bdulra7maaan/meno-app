@@ -11,3 +11,11 @@ android/local.properties
 .idea/
 .vscode/
 admin/config.js
+dist/
+*.jks
+*.keystore
+android/key.properties
+.env
+.env.*
+!*.example
+android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java

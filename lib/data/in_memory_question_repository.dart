@@ -15,7 +15,8 @@ class InMemoryQuestionRepository implements QuestionRepository {
         Answer(
           id: 'a1',
           author: 'سارة عثمان',
-          body: 'جرّبت التحويل البنكي المباشر الأسبوع الفات، وصل في نفس اليوم. اتأكد من اسم المستفيد مطابق للحساب.',
+          body:
+              'جرّبت التحويل البنكي المباشر الأسبوع الفات، وصل في نفس اليوم. اتأكد من اسم المستفيد مطابق للحساب.',
           createdAt: DateTime.now().subtract(const Duration(hours: 1)),
           helpfulCount: 14,
           answerType: 'تجربة شخصية',
@@ -34,7 +35,8 @@ class InMemoryQuestionRepository implements QuestionRepository {
         Answer(
           id: 'a2',
           author: 'أحمد الطيب',
-          body: 'قدمت إلكتروني ومعاي جواز ساري وصورة شخصية وحجز مبدئي. الرد وصلني بعد أربعة أيام.',
+          body:
+              'قدمت إلكتروني ومعاي جواز ساري وصورة شخصية وحجز مبدئي. الرد وصلني بعد أربعة أيام.',
           createdAt: DateTime.now().subtract(const Duration(hours: 18)),
           helpfulCount: 8,
           answerType: 'تجربة شخصية',
@@ -42,7 +44,8 @@ class InMemoryQuestionRepository implements QuestionRepository {
         Answer(
           id: 'a3',
           author: 'منى',
-          body: 'خلي الاسم في الطلب مطابق للجواز حرفياً عشان ما تتأخر المعاملة.',
+          body:
+              'خلي الاسم في الطلب مطابق للجواز حرفياً عشان ما تتأخر المعاملة.',
           createdAt: DateTime.now().subtract(const Duration(hours: 12)),
           helpfulCount: 5,
           answerType: 'معلومة أعرفها',
@@ -96,7 +99,10 @@ class InMemoryQuestionRepository implements QuestionRepository {
       body: body,
       createdAt: DateTime.now(),
     );
-    _questions.firstWhere((question) => question.id == questionId).answers.add(answer);
+    _questions
+        .firstWhere((question) => question.id == questionId)
+        .answers
+        .add(answer);
     return answer;
   }
 

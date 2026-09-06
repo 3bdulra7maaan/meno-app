@@ -68,11 +68,7 @@ class SupabaseQuestionRepository implements QuestionRepository {
   }) async {
     await _ensureAnonymousSession();
     final row = await _client
-        .rpc(
-          'toggle_helpful',
-          params: {'answer_id_input': answerId},
-        )
-        .single();
+        .rpc('toggle_helpful', params: {'answer_id_input': answerId}).single();
     return HelpfulVoteResult(
       isHelpful: row['is_helpful'] as bool,
       helpfulCount: row['helpful_count'] as int,
