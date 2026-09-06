@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meno/data/in_memory_question_repository.dart';
 import 'package:meno/data/question_repository.dart';
 import 'package:meno/main.dart';
+import 'package:meno/models/home_banner.dart';
 import 'package:meno/models/question.dart';
 
 void main() {
@@ -241,6 +242,9 @@ class _StateRepository implements QuestionRepository {
   Future<List<Question>> currentUserQuestions() => result;
 
   @override
+  Future<List<HomeBanner>> activeBanners() async => const [];
+
+  @override
   Future<Question> submitQuestion({
     required String title,
     required String body,
@@ -260,6 +264,13 @@ class _StateRepository implements QuestionRepository {
   Future<HelpfulVoteResult> toggleHelpful({
     required String questionId,
     required String answerId,
+  }) =>
+      throw UnimplementedError();
+
+  @override
+  Future<bool> reportAnswer({
+    required String answerId,
+    required String reason,
   }) =>
       throw UnimplementedError();
 }
