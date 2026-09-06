@@ -27,6 +27,10 @@
       <button data-view="pending">قيد المراجعة</button>
       <button data-view="approved">المعتمدة</button>
       <button data-view="rejected">المرفوضة</button>
+      <button data-view="reports">البلاغات</button>
+      <button data-view="answers">الإجابات</button>
+      <button data-view="blocked">الكلمات المحظورة</button>
+      <button data-view="banners">البنرات</button>
     </nav>
     <section id="dashboard" class="page">
       <div class="section-title"><h1>ملخص اليوم</h1><button id="refresh" class="quiet">تحديث</button></div>
@@ -44,10 +48,39 @@
       <div class="section-title"><h1 id="questions-title"></h1><span id="questions-count"></span></div>
       <div id="questions-list" class="list"></div>
     </section>
+    <section id="reports" class="page" hidden>
+      <div class="section-title"><h1>البلاغات</h1><button class="quiet" data-reload="reports">تحديث</button></div>
+      <div id="reports-list" class="list"></div>
+    </section>
+    <section id="answers" class="page" hidden>
+      <div class="section-title"><h1>كل الإجابات</h1><span id="answers-count"></span></div>
+      <div class="filters"><input id="answers-search" type="search" placeholder="ابحث في الإجابات أو السؤال"><select id="answers-filter"><option value="all">الكل</option><option value="visible">الظاهرة</option><option value="hidden">المخفية</option></select></div>
+      <div id="answers-list" class="list"></div>
+    </section>
+    <section id="blocked" class="page" hidden>
+      <div class="section-title"><h1>الكلمات المحظورة</h1><span>للإدارة فقط</span></div>
+      <form id="blocked-form" class="inline-form"><input id="blocked-word" required minlength="2" maxlength="100" placeholder="أضف كلمة أو عبارة"><select id="blocked-category"><option value="abuse">إساءة</option><option value="racism">عنصرية</option><option value="spam">Spam</option><option value="other">أخرى</option></select><button type="submit">إضافة</button></form>
+      <div id="blocked-list" class="list"></div>
+    </section>
+    <section id="banners" class="page" hidden>
+      <div class="section-title"><h1>بنرات الرئيسية</h1><button id="new-banner" class="quiet">بنر جديد</button></div>
+      <form id="banner-form" class="editor-form" hidden>
+        <input id="banner-id" type="hidden">
+        <label>العنوان<input id="banner-title" required maxlength="100"></label>
+        <label>النص القصير<textarea id="banner-text" maxlength="240"></textarea></label>
+        <label>رابط الصورة HTTPS<input id="banner-image" type="url" required></label>
+        <label>الرابط المستهدف — اختياري<input id="banner-target" type="url"></label>
+        <div class="filters"><label>النوع<select id="banner-type"><option value="announcement">إعلان عام</option><option value="promotion">ترويج</option><option value="ad">إعلان مدفوع</option></select></label><label>الترتيب<input id="banner-order" type="number" min="0" value="0"></label><label>يبدأ<input id="banner-start" type="datetime-local"></label><label>ينتهي<input id="banner-end" type="datetime-local"></label></div>
+        <label class="check"><input id="banner-enabled" type="checkbox" checked> مفعّل</label>
+        <div id="banner-preview" class="banner-preview"></div>
+        <div class="actions"><button type="submit">حفظ</button><button type="button" id="cancel-banner" class="quiet">إلغاء</button></div>
+      </form>
+      <div id="banners-list" class="list"></div>
+    </section>
     <dialog id="question-dialog"><div id="question-detail"></div><button id="close-dialog" class="quiet">إغلاق</button></dialog>
     <div id="toast" role="status"></div>
   </div>
   <script src="config.js"></script>
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
