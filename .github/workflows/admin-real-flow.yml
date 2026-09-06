@@ -1,0 +1,43 @@
+name: Admin real flow
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/admin-v1]
+    paths:
+      - admin/**
+      - .github/workflows/admin-real-flow.yml
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: feature/admin-v1
+      - name: Validate dashboard JavaScript
+        run: node --check admin/app.js && node --check admin/real_flow_smoke.mjs
+      - name: Build safe admin preview
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          test -n "$SUPABASE_URL" && test -n "$SUPABASE_ANON_KEY"
+          SUPABASE_BASE_URL="${SUPABASE_URL%/}"
+          SUPABASE_BASE_URL="${SUPABASE_BASE_URL%/rest/v1}"
+          mkdir -p dist/admin dist/assets/fonts
+          cp admin/index.html admin/styles.css admin/app.js dist/admin/
+          cp assets/fonts/Almarai-*.ttf dist/assets/fonts/
+          printf "window.MENO_CONFIG = { supabaseUrl: '%s', supabaseAnonKey: '%s' };\n" "$SUPABASE_BASE_URL" "$SUPABASE_ANON_KEY" > dist/admin/config.js
+      - name: Verify real moderation flow
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_ADMIN_EMAIL: ${{ secrets.SUPABASE_ADMIN_EMAIL }}
+          SUPABASE_ADMIN_PASSWORD: ${{ secrets.SUPABASE_ADMIN_PASSWORD }}
+        run: node admin/real_flow_smoke.mjs
+      - uses: actions/upload-artifact@v5
+        with:
+          name: meno-admin-preview
+          path: dist
+          retention-days: 7

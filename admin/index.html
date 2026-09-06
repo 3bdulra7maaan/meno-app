@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>إدارة Meno</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="login-view" class="login-shell">
+    <form id="login-form" class="login-card">
+      <div class="brand">Meno</div>
+      <h1>لوحة الإدارة</h1>
+      <p>سجّل الدخول بحساب إداري مصرح له.</p>
+      <label>البريد الإلكتروني<input id="email" type="email" autocomplete="username" required></label>
+      <label>كلمة المرور<input id="password" type="password" autocomplete="current-password" required></label>
+      <button type="submit">تسجيل الدخول</button>
+      <p id="login-error" class="error" role="alert"></p>
+    </form>
+  </main>
+
+  <div id="app-view" class="app" hidden>
+    <header><span class="brand">Meno</span><strong>الإدارة والتحليلات</strong><button id="logout" class="quiet">خروج</button></header>
+    <nav aria-label="أقسام لوحة الإدارة">
+      <button data-view="dashboard" class="active">الملخص</button>
+      <button data-view="pending">قيد المراجعة</button>
+      <button data-view="approved">المعتمدة</button>
+      <button data-view="rejected">المرفوضة</button>
+    </nav>
+    <section id="dashboard" class="page">
+      <div class="section-title"><h1>ملخص اليوم</h1><button id="refresh" class="quiet">تحديث</button></div>
+      <div id="metrics" class="metrics"></div>
+      <div class="grid">
+        <article><h2>أكثر الأقسام مشاهدة</h2><div id="categories" class="bars"></div></article>
+        <article><h2>النشاط خلال 14 يوماً</h2><div id="days" class="bars"></div></article>
+      </div>
+      <div class="grid">
+        <article><h2>أحدث الأسئلة</h2><div id="recent-questions"></div></article>
+        <article><h2>أحدث الإجابات</h2><div id="recent-answers"></div></article>
+      </div>
+    </section>
+    <section id="questions" class="page" hidden>
+      <div class="section-title"><h1 id="questions-title"></h1><span id="questions-count"></span></div>
+      <div id="questions-list" class="list"></div>
+    </section>
+    <dialog id="question-dialog"><div id="question-detail"></div><button id="close-dialog" class="quiet">إغلاق</button></dialog>
+    <div id="toast" role="status"></div>
+  </div>
+  <script src="config.js"></script>
+  <script src="app.js?v=2"></script>
+</body>
+</html>
