@@ -1,55 +1,68 @@
-name: Android APK
-
+name: Android release checks
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main, feature/supabase-phase-2, feature/ui-ux-refresh]
   workflow_dispatch:
-
+permissions:
+  contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: '3.47.2'
           cache: true
-      - name: Generate Android project shell
-        run: flutter create --platforms=android --org=com.meno.app .
+      - name: Generate missing Android shell
+        run: flutter create --platforms=android --org=com.meno.app --project-name=meno .
       - run: flutter pub get
-      - run: dart format lib test
+      - run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
       - run: flutter test
-      - name: Validate admin dashboard JavaScript
-        run: node --check admin/app.js
-      - name: Verify Supabase public data flow
-        run: >-
-          flutter test test/supabase_smoke_test.dart
-          --dart-define=SUPABASE_URL="$SUPABASE_URL"
-          --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+      - run: node --check admin/app.js
+      - run: node --test scripts/release.test.mjs
+      - run: node scripts/audit-secrets.mjs
+      - name: Validate live public configuration
+        run: node --input-type=module -e "import {publicConfig} from './scripts/public-config.mjs'; publicConfig();"
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      - name: Capture final screens with bundled Almarai
-        run: >-
-          flutter test test/screenshot_test.dart
-          --dart-define=CAPTURE_SCREENSHOTS=true
-      - name: Build release APK
-        run: >-
-          flutter build apk --release
-          --dart-define=SUPABASE_URL="$SUPABASE_URL"
-          --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+      - name: Public Supabase smoke test
+        run: flutter test test/supabase_smoke_test.dart --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      - uses: actions/upload-artifact@v4
+      - name: Capture bundled Almarai screenshots
+        run: flutter test test/screenshot_test.dart --dart-define=CAPTURE_SCREENSHOTS=true
+      - name: Build installable test APK (not Play signing)
+        run: flutter build apk --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+        env:
+          MENO_TEST_SIGNING: 'true'
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      - name: Build unsigned release AAB
+        run: flutter build appbundle --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      - uses: actions/upload-artifact@v5
         with:
-          name: meno-android-apk
+          name: meno-test-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
+        with:
+          name: meno-unsigned-aab-not-for-upload
+          path: build/app/outputs/bundle/release/*.aab
+      - uses: actions/upload-artifact@v5
         with:
           name: meno-final-screenshots
           path: build/screenshots/*.png
