@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main, feature/supabase-phase-2]
+    branches: [main, feature/supabase-phase-2, feature/ui-ux-refresh]
   workflow_dispatch:
 
 jobs:
@@ -23,6 +23,8 @@ jobs:
       - run: dart format lib test
       - run: flutter analyze
       - run: flutter test
+      - name: Validate admin dashboard JavaScript
+        run: node --check admin/app.js
       - name: Verify Supabase public data flow
         run: >-
           flutter test test/supabase_smoke_test.dart

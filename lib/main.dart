@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'data/analytics_service.dart';
 import 'data/in_memory_question_repository.dart';
 import 'data/question_repository.dart';
 import 'data/supabase_question_repository.dart';
@@ -41,6 +44,8 @@ Future<void> main() async {
   const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
   if (url.isNotEmpty && anonKey.isNotEmpty) {
     await Supabase.initialize(url: url, publishableKey: anonKey);
+    AnalyticsService.instance.configure(Supabase.instance.client);
+    unawaited(AnalyticsService.instance.track('app_open'));
   }
   final repository = url.isNotEmpty && anonKey.isNotEmpty
       ? SupabaseQuestionRepository(Supabase.instance.client)
@@ -237,6 +242,11 @@ class _HomeShellState extends State<HomeShell> {
               autofocus: false,
               textInputAction: TextInputAction.search,
               onChanged: (value) => setState(() => search = value),
+              onSubmitted: (value) {
+                if (value.trim().isNotEmpty) {
+                  unawaited(AnalyticsService.instance.track('search'));
+                }
+              },
               decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'فتّش في الأسئلة...'),
             ),
             const SizedBox(height: 6),
@@ -264,7 +274,15 @@ class _HomeShellState extends State<HomeShell> {
               side: BorderSide(color: selected ? darkGold : border),
               labelStyle: const TextStyle(color: primaryBlack, fontWeight: FontWeight.w700),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
-              onSelected: (_) => setState(() => category = categories[i]),
+              onSelected: (_) {
+                setState(() => category = categories[i]);
+                unawaited(
+                  AnalyticsService.instance.track(
+                    'category_selected',
+                    category: categories[i],
+                  ),
+                );
+              },
             );
           },
         ),
@@ -318,9 +336,25 @@ class _HomeShellState extends State<HomeShell> {
             children: filtered
                 .map((question) => QuestionCard(
                       question: question,
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => QuestionDetailsScreen(question: question, repository: widget.repository)),
-                      ).then((_) => refresh()),
+                      onTap: () {
+                        unawaited(
+                          AnalyticsService.instance.track(
+                            'question_view',
+                            category: question.category,
+                            entityId: question.id,
+                          ),
+                        );
+                        Navigator.of(context)
+                            .push(
+                              MaterialPageRoute(
+                                builder: (_) => QuestionDetailsScreen(
+                                  question: question,
+                                  repository: widget.repository,
+                                ),
+                              ),
+                            )
+                            .then((_) => refresh());
+                      },
                     ))
                 .toList(),
           );
@@ -407,6 +441,12 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
         body: body.text.trim(),
         category: category,
         anonymous: anonymous,
+      );
+      unawaited(
+        AnalyticsService.instance.track(
+          'question_submitted',
+          category: category,
+        ),
       );
       if (mounted) Navigator.pop(context, true);
     } catch (_) {
@@ -512,6 +552,13 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
         questionId: widget.question.id,
         body: answer.text.trim(),
       );
+      unawaited(
+        AnalyticsService.instance.track(
+          'answer_submitted',
+          category: widget.question.category,
+          entityId: widget.question.id,
+        ),
+      );
       if (!widget.question.answers.any((item) => item.id == created.id)) {
         widget.question.answers.add(created);
       }
@@ -560,6 +607,13 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
                       final result = await widget.repository.toggleHelpful(
                         questionId: widget.question.id,
                         answerId: item.id,
+                      );
+                      unawaited(
+                        AnalyticsService.instance.track(
+                          'helpful_vote',
+                          category: widget.question.category,
+                          entityId: widget.question.id,
+                        ),
                       );
                       item.isHelpful = result.isHelpful;
                       item.helpfulCount = result.helpfulCount;
