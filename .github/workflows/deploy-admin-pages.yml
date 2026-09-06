@@ -1,34 +1,38 @@
-name: Build Meno Admin Pages bundle
+name: Deploy Meno website and Admin to Pages
 
 on:
-  workflow_dispatch:
   push:
-    branches: [feature/admin-v1]
+    branches: [main]
     paths:
       - admin/**
       - assets/fonts/**
+      - docs/**
       - .github/workflows/deploy-admin-pages.yml
+  workflow_dispatch:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Check out Admin v1
+      - name: Check out main
         uses: actions/checkout@v5
-        with:
-          ref: feature/admin-v1
-          path: app
 
-      - name: Check out official website
-        uses: actions/checkout@v5
-        with:
-          ref: website/official-site
-          path: official-site
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
 
-      - name: Build safe Pages bundle
+      - name: Build public Pages bundle
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -36,25 +40,41 @@ jobs:
           set -euo pipefail
           test -n "$SUPABASE_URL"
           test -n "$SUPABASE_ANON_KEY"
-          SUPABASE_BASE_URL="${SUPABASE_URL%/}"
-          SUPABASE_BASE_URL="${SUPABASE_BASE_URL%/rest/v1}"
 
+          rm -rf dist
           mkdir -p dist/admin dist/assets/fonts
-          cp -R official-site/docs/. dist/
-          cp app/admin/index.html app/admin/styles.css app/admin/app.js dist/admin/
-          cp app/assets/fonts/Almarai-*.ttf dist/assets/fonts/
-          printf "window.MENO_CONFIG = { supabaseUrl: '%s', supabaseAnonKey: '%s' };\n" \
-            "$SUPABASE_BASE_URL" "$SUPABASE_ANON_KEY" > dist/admin/config.js
-          touch dist/.nojekyll
+          cp -R docs/. dist/
+          cp admin/index.html admin/styles.css admin/app.js dist/admin/
+          cp assets/fonts/Almarai-*.ttf dist/assets/fonts/
 
+          node <<'NODE'
+          const fs = require('fs');
+          const rawUrl = process.env.SUPABASE_URL.trim().replace(/\/+$/, '');
+          const supabaseUrl = rawUrl.replace(/\/rest\/v1$/, '');
+          const config = {
+            supabaseUrl,
+            supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+          };
+          fs.writeFileSync(
+            'dist/admin/config.js',
+            `window.MENO_CONFIG = ${JSON.stringify(config)};\n`,
+          );
+          NODE
+
+          touch dist/.nojekyll
+          test -f dist/index.html
+          test -f dist/admin/index.html
+          test -f dist/admin/config.js
           test ! -e dist/admin/real_flow_smoke.mjs
           ! grep -R --fixed-strings "SUPABASE_ADMIN_EMAIL" dist
           ! grep -R --fixed-strings "SUPABASE_ADMIN_PASSWORD" dist
           ! grep -R --fixed-strings "service_role" dist
 
-      - name: Upload safe preview bundle
-        uses: actions/upload-artifact@v5
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
         with:
-          name: meno-admin-pages-preview
           path: dist
-          retention-days: 7
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
