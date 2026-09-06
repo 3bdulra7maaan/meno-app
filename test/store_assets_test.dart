@@ -33,8 +33,9 @@ void main() {
 
       label('Meno', graphic ? 112 : 108, graphic ? 85 : 175,
           const Color(0xFFD9A752), TextDirection.ltr);
-      if (graphic)
+      if (graphic) {
         label('اسأل زول جرّب', 62, 260, Colors.white, TextDirection.rtl);
+      }
       final picture = recorder.endRecording();
       final image = await picture.toImage(width, height);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
