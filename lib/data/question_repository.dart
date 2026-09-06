@@ -1,4 +1,5 @@
 import '../models/question.dart';
+import '../models/home_banner.dart';
 
 abstract class QuestionRepository {
   Future<List<Question>> approvedQuestions();
@@ -9,6 +10,8 @@ abstract class QuestionRepository {
   });
 
   Future<List<Question>> currentUserQuestions();
+
+  Future<List<HomeBanner>> activeBanners();
 
   Future<Question> submitQuestion({
     required String title,
@@ -26,4 +29,6 @@ abstract class QuestionRepository {
     required String questionId,
     required String answerId,
   });
+
+  Future<bool> reportAnswer({required String answerId, required String reason});
 }
