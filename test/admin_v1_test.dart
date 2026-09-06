@@ -17,13 +17,17 @@ void main() {
     final dashboard = files.map((file) => file.readAsStringSync()).join('\n');
     expect(dashboard, contains('is_meno_admin'));
     expect(dashboard, contains('signInWithPassword'));
+    expect(dashboard, contains('answer_reports'));
+    expect(dashboard, contains('blocked_words'));
+    expect(dashboard, contains('home_banners'));
+    expect(dashboard, contains('data-view="reports"'));
+    expect(dashboard, contains('data-view="answers"'));
     expect(dashboard.toLowerCase(), isNot(contains('service_role')));
   });
 
   test('migration enforces admin RLS and privacy-minimal analytics', () {
-    final sql = File(
-      'supabase/migrations/202609030001_admin_analytics.sql',
-    ).readAsStringSync();
+    final sql = File('supabase/migrations/202609030001_admin_analytics.sql')
+        .readAsStringSync();
 
     expect(sql, contains('enable row level security'));
     expect(sql, contains('public.is_meno_admin()'));
