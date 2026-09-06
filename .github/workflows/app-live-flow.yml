@@ -1,0 +1,31 @@
+name: App live persistence flow
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: meno-app-live-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: node --check test/live_app_flow_smoke.mjs
+      - name: Verify real app persistence, moderation, search and RLS flow
+        run: node test/live_app_flow_smoke.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_ADMIN_EMAIL: ${{ secrets.SUPABASE_ADMIN_EMAIL }}
+          SUPABASE_ADMIN_PASSWORD: ${{ secrets.SUPABASE_ADMIN_PASSWORD }}
