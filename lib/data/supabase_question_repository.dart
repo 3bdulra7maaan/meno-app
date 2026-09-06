@@ -1,6 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/home_banner.dart';
 import '../models/question.dart';
+import 'content_safety.dart';
 import 'question_repository.dart';
 import 'question_search.dart';
 
@@ -43,12 +45,24 @@ class SupabaseQuestionRepository implements QuestionRepository {
   }
 
   @override
+  Future<List<HomeBanner>> activeBanners() async {
+    final rows = await _client
+        .from('home_banners')
+        .select()
+        .eq('enabled', true)
+        .order('display_order')
+        .order('created_at');
+    return rows.map(_bannerFromMap).toList();
+  }
+
+  @override
   Future<Question> submitQuestion({
     required String title,
     required String body,
     required String category,
     required bool anonymous,
   }) async {
+    await _ensureAllowed('$title $body');
     final userId = await _ensureAnonymousSession();
     final row = await _client
         .from('questions')
@@ -71,6 +85,7 @@ class SupabaseQuestionRepository implements QuestionRepository {
     required String questionId,
     required String body,
   }) async {
+    await _ensureAllowed(body);
     final userId = await _ensureAnonymousSession();
     final row = await _client
         .from('answers')
@@ -97,6 +112,27 @@ class SupabaseQuestionRepository implements QuestionRepository {
       isHelpful: row['is_helpful'] as bool,
       helpfulCount: row['helpful_count'] as int,
     );
+  }
+
+  @override
+  Future<bool> reportAnswer({
+    required String answerId,
+    required String reason,
+  }) async {
+    await _ensureAnonymousSession();
+    final result = await _client.rpc(
+      'report_answer',
+      params: {'answer_id_input': answerId, 'reason_input': reason},
+    );
+    return result == true;
+  }
+
+  Future<void> _ensureAllowed(String text) async {
+    final result = await _client.rpc(
+      'is_submission_text_allowed',
+      params: {'input_text': text},
+    );
+    if (result != true) throw const BlockedContentException();
   }
 
   Future<String> _ensureAnonymousSession() async {
@@ -142,4 +178,21 @@ class SupabaseQuestionRepository implements QuestionRepository {
       isHelpful: votes.isNotEmpty,
     );
   }
+
+  HomeBanner _bannerFromMap(Map<String, dynamic> row) => HomeBanner(
+        id: row['id'].toString(),
+        imageUrl: row['image_url'] as String,
+        title: row['title'] as String,
+        shortText: row['short_text'] as String,
+        targetUrl: row['target_url'] as String?,
+        type: HomeBannerType.values.byName(row['type'] as String),
+        displayOrder: row['display_order'] as int,
+        enabled: row['enabled'] as bool? ?? true,
+        startAt: row['start_at'] == null
+            ? null
+            : DateTime.parse(row['start_at'] as String),
+        endAt: row['end_at'] == null
+            ? null
+            : DateTime.parse(row['end_at'] as String),
+      );
 }
