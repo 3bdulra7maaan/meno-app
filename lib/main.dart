@@ -4,10 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'data/analytics_service.dart';
+import 'data/content_safety.dart';
 import 'data/in_memory_question_repository.dart';
 import 'data/question_repository.dart';
 import 'data/supabase_question_repository.dart';
+import 'models/home_banner.dart';
 import 'models/question.dart';
+import 'onboarding.dart';
+import 'widgets/home_banner_carousel.dart';
 
 const primaryBlack = Color(0xFF121212);
 const warmGold = Color(0xFFD9A752);
@@ -37,6 +41,14 @@ const categories = [
   'أخرى',
 ];
 
+const reportReasons = {
+  'abuse': 'إساءة أو تنمر',
+  'misleading': 'معلومات مضللة',
+  'spam': 'إعلان أو Spam',
+  'inappropriate': 'محتوى غير مناسب',
+  'other': 'أخرى',
+};
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   const rawUrl = String.fromEnvironment('SUPABASE_URL');
@@ -50,7 +62,8 @@ Future<void> main() async {
   final repository = url.isNotEmpty && anonKey.isNotEmpty
       ? SupabaseQuestionRepository(Supabase.instance.client)
       : InMemoryQuestionRepository();
-  runApp(MenoApp(repository: repository));
+  final showOnboarding = !(await isOnboardingCompleted());
+  runApp(MenoApp(repository: repository, showOnboarding: showOnboarding));
 }
 
 String normalizeSupabaseUrl(String value) {
@@ -65,9 +78,14 @@ String normalizeSupabaseUrl(String value) {
 }
 
 class MenoApp extends StatelessWidget {
-  const MenoApp({super.key, required this.repository});
+  const MenoApp({
+    super.key,
+    required this.repository,
+    this.showOnboarding = false,
+  });
 
   final QuestionRepository repository;
+  final bool showOnboarding;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -132,7 +150,10 @@ class MenoApp extends StatelessWidget {
         ),
         builder: (context, child) =>
             Directionality(textDirection: TextDirection.rtl, child: child!),
-        home: HomeShell(repository: repository),
+        home: OnboardingGate(
+          showInitially: showOnboarding,
+          home: HomeShell(repository: repository),
+        ),
       );
 }
 
@@ -153,11 +174,14 @@ class _HomeShellState extends State<HomeShell> {
   Timer? searchDebounce;
   late Future<List<Question>> questions;
   late Future<List<Question>> searchResults;
+  late Future<List<HomeBanner>> banners;
+  final myQuestionsKey = GlobalKey<_MyQuestionsScreenState>();
 
   @override
   void initState() {
     super.initState();
     questions = widget.repository.approvedQuestions();
+    banners = widget.repository.activeBanners();
     searchResults = widget.repository.searchApprovedQuestions(
       query: '',
       category: searchCategory,
@@ -173,6 +197,7 @@ class _HomeShellState extends State<HomeShell> {
 
   void refresh() => setState(() {
         questions = widget.repository.approvedQuestions();
+        banners = widget.repository.activeBanners();
         searchResults = widget.repository.searchApprovedQuestions(
           query: search,
           category: searchCategory,
@@ -208,15 +233,6 @@ class _HomeShellState extends State<HomeShell> {
     });
   }
 
-  Future<void> openMyQuestions() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (_) => MyQuestionsScreen(repository: widget.repository),
-      ),
-    );
-    if (mounted) refresh();
-  }
-
   Future<void> openAsk() async {
     final submitted = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -234,66 +250,85 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [_home(), _search()];
+    final pages = [
+      _home(),
+      _search(),
+      MyQuestionsScreen(
+        key: myQuestionsKey,
+        repository: widget.repository,
+        embedded: true,
+      ),
+    ];
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         toolbarHeight: 68,
         titleSpacing: 18,
-        title: Row(
-          textDirection: TextDirection.ltr,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Meno',
-              style: TextStyle(
-                color: primaryBlack,
-                fontWeight: FontWeight.w800,
-                fontSize: 24.5,
-                letterSpacing: -1,
-              ),
-            ),
-            Row(
-              children: [
-                TextButton.icon(
-                  key: const Key('my-questions-action'),
-                  onPressed: openMyQuestions,
-                  icon: const Icon(Icons.list_alt_rounded, size: 19),
-                  label: const Text('أسئلتي'),
+        title: LayoutBuilder(
+          builder: (context, constraints) => Row(
+            textDirection: TextDirection.ltr,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Meno',
+                style: TextStyle(
+                  color: primaryBlack,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 24.5,
+                  letterSpacing: -1,
                 ),
-                const SizedBox(width: 4),
-                FilledButton.icon(
-                  onPressed: openAsk,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: warmGold,
-                    foregroundColor: primaryBlack,
-                    minimumSize: const Size(88, 42),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13),
+              ),
+              Row(
+                children: [
+                  if (constraints.maxWidth >= 300) ...[
+                    IconButton(
+                      key: const Key('about-action'),
+                      tooltip: 'عن Meno',
+                      onPressed: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => OnboardingScreen(
+                            onDone: () async => Navigator.of(context).pop(),
+                          ),
+                        ),
+                      ),
+                      icon: const Icon(Icons.info_outline_rounded),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  FilledButton.icon(
+                    onPressed: openAsk,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: warmGold,
+                      foregroundColor: primaryBlack,
+                      minimumSize: const Size(88, 42),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                    ),
+                    icon: const Icon(Icons.add, size: 19),
+                    label: const Text(
+                      'اسأل',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
-                  icon: const Icon(Icons.add, size: 19),
-                  label: const Text(
-                    'اسأل',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
       body: SafeArea(child: pages[index]),
       bottomNavigationBar: NavigationBar(
         height: 70,
         backgroundColor: Colors.white,
-        selectedIndex: index == 0 ? 0 : 2,
+        selectedIndex: index == 0 ? 0 : (index == 1 ? 1 : 3),
         indicatorColor: warmGold.withValues(alpha: .45),
         onDestinationSelected: (value) {
-          if (value == 1) {
+          if (value == 2) {
             openAsk();
           } else {
-            setState(() => index = value == 0 ? 0 : 1);
+            setState(() => index = value == 0 ? 0 : (value == 1 ? 1 : 2));
+            if (value == 3) myQuestionsKey.currentState?.refresh();
           }
         },
         destinations: [
@@ -301,6 +336,11 @@ class _HomeShellState extends State<HomeShell> {
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'الرئيسية',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.search_outlined),
+            selectedIcon: Icon(Icons.search),
+            label: 'البحث',
           ),
           NavigationDestination(
             icon: Container(
@@ -314,7 +354,11 @@ class _HomeShellState extends State<HomeShell> {
             ),
             label: 'اسأل',
           ),
-          const NavigationDestination(icon: Icon(Icons.search), label: 'بحث'),
+          const NavigationDestination(
+            icon: Icon(Icons.list_alt_outlined),
+            selectedIcon: Icon(Icons.list_alt_rounded),
+            label: 'أسئلتي',
+          ),
         ],
       ),
     );
@@ -379,6 +423,11 @@ class _HomeShellState extends State<HomeShell> {
                   ),
                 ],
               ),
+            ),
+            FutureBuilder<List<HomeBanner>>(
+              future: banners,
+              builder: (context, snapshot) =>
+                  HomeBannerCarousel(banners: snapshot.data ?? const []),
             ),
             _categoryList(),
             const Padding(
@@ -758,8 +807,13 @@ class QuestionCard extends StatelessWidget {
 }
 
 class MyQuestionsScreen extends StatefulWidget {
-  const MyQuestionsScreen({super.key, required this.repository});
+  const MyQuestionsScreen({
+    super.key,
+    required this.repository,
+    this.embedded = false,
+  });
   final QuestionRepository repository;
+  final bool embedded;
 
   @override
   State<MyQuestionsScreen> createState() => _MyQuestionsScreenState();
@@ -795,64 +849,85 @@ class _MyQuestionsScreenState extends State<MyQuestionsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar:
-            AppBar(title: const Text('أسئلتي'), backgroundColor: Colors.white),
-        body: FutureBuilder<List<Question>>(
-          future: questions,
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.wifi_off_rounded, size: 42),
-                    const SizedBox(height: 12),
-                    const Text('ما قدرنا نحمّل أسئلتك.'),
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      onPressed: refresh,
-                      child: const Text('حاول تاني'),
-                    ),
-                  ],
+  Widget build(BuildContext context) {
+    final content = FutureBuilder<List<Question>>(
+      future: questions,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.wifi_off_rounded, size: 42),
+                const SizedBox(height: 12),
+                const Text('ما قدرنا نحمّل أسئلتك.'),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: refresh,
+                  child: const Text('حاول تاني'),
                 ),
+              ],
+            ),
+          );
+        }
+        if (!snapshot.hasData) return const _LoadingFeed();
+        final items = snapshot.data!;
+        if (items.isEmpty) {
+          return RefreshIndicator(
+            onRefresh: refresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [
+                SizedBox(height: 150),
+                Icon(Icons.help_outline_rounded, size: 48),
+                SizedBox(height: 12),
+                Text('ما عندك أسئلة مرسلة لسه.', textAlign: TextAlign.center),
+              ],
+            ),
+          );
+        }
+        return RefreshIndicator(
+          onRefresh: refresh,
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 28),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final question = items[index];
+              return _MyQuestionCard(
+                question: question,
+                onTap: () => openQuestion(question),
               );
-            }
-            if (!snapshot.hasData) return const _LoadingFeed();
-            final items = snapshot.data!;
-            if (items.isEmpty) {
-              return RefreshIndicator(
-                onRefresh: refresh,
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
-                    SizedBox(height: 150),
-                    Icon(Icons.help_outline_rounded, size: 48),
-                    SizedBox(height: 12),
-                    Text('ما عندك أسئلة مرسلة لسه.',
-                        textAlign: TextAlign.center),
-                  ],
-                ),
-              );
-            }
-            return RefreshIndicator(
-              onRefresh: refresh,
-              child: ListView.builder(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 28),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final question = items[index];
-                  return _MyQuestionCard(
-                    question: question,
-                    onTap: () => openQuestion(question),
-                  );
-                },
+            },
+          ),
+        );
+      },
+    );
+    if (widget.embedded) {
+      return Column(
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(18, 18, 18, 8),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                'أسئلتي',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
               ),
-            );
-          },
-        ),
+            ),
+          ),
+          Expanded(child: content),
+        ],
       );
+    }
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('أسئلتي'),
+        backgroundColor: Colors.white,
+      ),
+      body: content,
+    );
+  }
 }
 
 class _MyQuestionCard extends StatelessWidget {
@@ -968,6 +1043,11 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
         ),
       );
       if (mounted) Navigator.pop(context, true);
+    } on BlockedContentException {
+      if (!mounted) return;
+      setState(() => saving = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text(blockedContentMessage)));
     } catch (_) {
       if (!mounted) return;
       setState(() => saving = false);
@@ -1170,6 +1250,10 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
       }
       answer.clear();
       if (mounted) setState(() {});
+    } on BlockedContentException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text(blockedContentMessage)));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1178,15 +1262,39 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
     }
   }
 
+  Future<void> reportAnswer(Answer item, String reason) async {
+    try {
+      final created = await widget.repository.reportAnswer(
+        answerId: item.id,
+        reason: reason,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            created
+                ? 'وصلنا بلاغك، شكراً لمساعدتك في الحفاظ على المجتمع.'
+                : 'سبق وأبلغت عن هذه الإجابة.',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ما قدرنا نرسل البلاغ. حاول تاني.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-        resizeToAvoidBottomInset: true,
+        resizeToAvoidBottomInset: false,
         appBar:
             AppBar(title: const Text('السؤال'), backgroundColor: Colors.white),
         body: ListView(
           key: const Key('details-list'),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.only(bottom: 110),
+          padding: const EdgeInsets.only(bottom: 20),
           children: [
             Container(
               margin: const EdgeInsets.fromLTRB(14, 10, 14, 4),
@@ -1281,6 +1389,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
             ...widget.question.answers.map(
               (item) => _AnswerCard(
                 answer: item,
+                onReport: (reason) => reportAnswer(item, reason),
                 onHelpful: () async {
                   try {
                     final result = await widget.repository.toggleHelpful(
@@ -1310,32 +1419,49 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
             ),
           ],
         ),
-        bottomSheet: SafeArea(
-          top: false,
-          child: Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    key: const Key('answer-field'),
-                    controller: answer,
-                    minLines: 1,
-                    maxLines: 4,
-                    decoration: const InputDecoration(
-                      hintText: 'شارك تجربة أو معلومة مفيدة...',
+        bottomNavigationBar: AnimatedPadding(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: SafeArea(
+            top: false,
+            child: Container(
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 52),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        key: const Key('answer-field'),
+                        controller: answer,
+                        minLines: 1,
+                        maxLines: 4,
+                        textInputAction: TextInputAction.newline,
+                        decoration: const InputDecoration(
+                          hintText: 'شارك تجربة أو معلومة مفيدة...',
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      key: const Key('answer-send-button'),
+                      onPressed: addAnswer,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 48,
+                        height: 48,
+                      ),
+                      style:
+                          IconButton.styleFrom(backgroundColor: primaryBlack),
+                      icon: const Icon(Icons.send_rounded),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  key: const Key('answer-send-button'),
-                  onPressed: addAnswer,
-                  style: IconButton.styleFrom(backgroundColor: primaryBlack),
-                  icon: const Icon(Icons.send),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -1343,9 +1469,14 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
 }
 
 class _AnswerCard extends StatelessWidget {
-  const _AnswerCard({required this.answer, required this.onHelpful});
+  const _AnswerCard({
+    required this.answer,
+    required this.onHelpful,
+    required this.onReport,
+  });
   final Answer answer;
   final VoidCallback onHelpful;
+  final ValueChanged<String> onReport;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -1400,19 +1531,56 @@ class _AnswerCard extends StatelessWidget {
               Text(answer.body,
                   style: const TextStyle(fontSize: 15, height: 1.6)),
               const SizedBox(height: 10),
-              TextButton.icon(
-                onPressed: onHelpful,
-                style: TextButton.styleFrom(
-                  foregroundColor:
-                      answer.isHelpful ? primaryBlack : Colors.black54,
-                  backgroundColor:
-                      answer.isHelpful ? warmGold.withValues(alpha: .25) : null,
-                ),
-                icon: Icon(
-                  answer.isHelpful ? Icons.thumb_up : Icons.thumb_up_outlined,
-                  size: 18,
-                ),
-                label: Text('أفادني  ${answer.helpfulCount}'),
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: onHelpful,
+                    style: TextButton.styleFrom(
+                      foregroundColor:
+                          answer.isHelpful ? primaryBlack : Colors.black54,
+                      backgroundColor: answer.isHelpful
+                          ? warmGold.withValues(alpha: .25)
+                          : null,
+                    ),
+                    icon: Icon(
+                      answer.isHelpful
+                          ? Icons.thumb_up
+                          : Icons.thumb_up_outlined,
+                      size: 18,
+                    ),
+                    label: Text('أفادني  ${answer.helpfulCount}'),
+                  ),
+                  const Spacer(),
+                  PopupMenuButton<String>(
+                    key: Key('report-answer-${answer.id}'),
+                    tooltip: 'إبلاغ',
+                    onSelected: onReport,
+                    itemBuilder: (context) => reportReasons.entries
+                        .map(
+                          (entry) => PopupMenuItem(
+                            value: entry.key,
+                            child: Text(entry.value),
+                          ),
+                        )
+                        .toList(),
+                    child: const Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.flag_outlined,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
+                          SizedBox(width: 5),
+                          Text('إبلاغ',
+                              style: TextStyle(color: Colors.black54)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1506,11 +1674,9 @@ class _SubmissionDialog extends StatelessWidget {
 class _LoadingFeed extends StatelessWidget {
   const _LoadingFeed();
   @override
-  Widget build(BuildContext context) => Padding(
-        key: const Key('loading-state'),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Column(
-          children: List.generate(
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) {
+          final placeholders = List.generate(
             3,
             (index) => Container(
               height: 155,
@@ -1531,7 +1697,14 @@ class _LoadingFeed extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        ),
+          );
+          return Padding(
+            key: const Key('loading-state'),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: constraints.hasBoundedHeight
+                ? ListView(children: placeholders)
+                : Column(children: placeholders),
+          );
+        },
       );
 }
