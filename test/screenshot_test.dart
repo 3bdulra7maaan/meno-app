@@ -53,11 +53,14 @@ void main() {
 
   Future<void> capture(WidgetTester tester, GlobalKey key, String name) async {
     await tester.runAsync(() async {
-      final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      final boundary =
+          key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
       final image = await boundary.toImage(pixelRatio: 2);
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
-      final directory = Directory('build/screenshots')..createSync(recursive: true);
-      await File('${directory.path}/$name.png').writeAsBytes(data!.buffer.asUint8List());
+      final directory = Directory('build/screenshots')
+        ..createSync(recursive: true);
+      await File('${directory.path}/$name.png')
+          .writeAsBytes(data!.buffer.asUint8List());
     });
   }
 
@@ -128,10 +131,7 @@ void main() {
     expect(answerField.controller?.text, isEmpty);
     final updatedQuestion = (await repository.approvedQuestions()).first;
     expect(updatedQuestion.answers, hasLength(initialAnswerCount + 1));
-    expect(
-      updatedQuestion.answers.last.body,
-      'إجابة اختبار من تجربة حقيقية',
-    );
+    expect(updatedQuestion.answers.last.body, 'إجابة اختبار من تجربة حقيقية');
     expect(tester.takeException(), isNull);
 
     tester.view.viewInsets = FakeViewPadding.zero;
@@ -151,7 +151,11 @@ void main() {
 
   testWidgets('captures loading state', (tester) async {
     final key = GlobalKey();
-    await pumpPhone(tester, _StateRepository(Completer<List<Question>>().future), key);
+    await pumpPhone(
+      tester,
+      _StateRepository(Completer<List<Question>>().future),
+      key,
+    );
     await tester.pump(const Duration(milliseconds: 250));
     await capture(tester, key, 'loading-state');
   }, skip: !enabled);
@@ -160,7 +164,12 @@ void main() {
     final key = GlobalKey();
     await pumpPhone(
       tester,
-      _StateRepository(Future<List<Question>>.delayed(const Duration(milliseconds: 1), () => throw Exception('offline'))),
+      _StateRepository(
+        Future<List<Question>>.delayed(
+          const Duration(milliseconds: 1),
+          () => throw Exception('offline'),
+        ),
+      ),
       key,
     );
     await tester.pumpAndSettle();
@@ -170,9 +179,7 @@ void main() {
 
 Future<void> _expectArabicGlyphsAreNotTofu() async {
   const arabic = 'اسأل زول جرب';
-  final tofu = arabic.runes
-      .map((rune) => rune == 0x20 ? ' ' : '□')
-      .join();
+  final tofu = arabic.runes.map((rune) => rune == 0x20 ? ' ' : '□').join();
   final arabicPixels = await _renderText(arabic);
   final tofuPixels = await _renderText(tofu);
 
@@ -188,7 +195,8 @@ Future<void> _expectArabicGlyphsAreNotTofu() async {
   expect(
     differentPixels,
     greaterThan(500),
-    reason: 'Arabic raster output must differ visibly from missing-glyph boxes.',
+    reason:
+        'Arabic raster output must differ visibly from missing-glyph boxes.',
   );
 }
 
@@ -223,11 +231,35 @@ class _StateRepository implements QuestionRepository {
   Future<List<Question>> approvedQuestions() => result;
 
   @override
-  Future<Question> submitQuestion({required String title, required String body, required String category, required bool anonymous}) => throw UnimplementedError();
+  Future<List<Question>> searchApprovedQuestions({
+    required String query,
+    required String category,
+  }) =>
+      result;
 
   @override
-  Future<Answer> submitAnswer({required String questionId, required String body}) => throw UnimplementedError();
+  Future<List<Question>> currentUserQuestions() => result;
 
   @override
-  Future<HelpfulVoteResult> toggleHelpful({required String questionId, required String answerId}) => throw UnimplementedError();
+  Future<Question> submitQuestion({
+    required String title,
+    required String body,
+    required String category,
+    required bool anonymous,
+  }) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Answer> submitAnswer({
+    required String questionId,
+    required String body,
+  }) =>
+      throw UnimplementedError();
+
+  @override
+  Future<HelpfulVoteResult> toggleHelpful({
+    required String questionId,
+    required String answerId,
+  }) =>
+      throw UnimplementedError();
 }
