@@ -43,6 +43,8 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       - name: Capture bundled Almarai screenshots
         run: flutter test test/screenshot_test.dart --dart-define=CAPTURE_SCREENSHOTS=true
+      - name: Generate Play branding assets
+        run: flutter test test/store_assets_test.dart --dart-define=CAPTURE_STORE_ASSETS=true
       - name: Build installable test APK (not Play signing)
         run: flutter build apk --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
         env:
@@ -54,6 +56,18 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      - name: Audit final Android manifest and unpacked artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p build/release-audit/apk build/release-audit/aab
+          unzip -q build/app/outputs/flutter-apk/app-release.apk -d build/release-audit/apk
+          unzip -q build/app/outputs/bundle/release/app-release.aab -d build/release-audit/aab
+          node scripts/audit-secrets.mjs build/release-audit
+          "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest print build/app/outputs/flutter-apk/app-release.apk > build/release-audit/manifest.xml
+          grep -q 'package="com.meno.app.meno"' build/release-audit/manifest.xml
+          grep -q 'android:targetSdkVersion="36"' build/release-audit/manifest.xml
+          ! grep -q 'android:debuggable="true"' build/release-audit/manifest.xml
+          jarsigner -verify build/app/outputs/bundle/release/app-release.aab | grep -q 'jar is unsigned'
       - uses: actions/upload-artifact@v5
         with:
           name: meno-test-apk
@@ -66,3 +80,7 @@ jobs:
         with:
           name: meno-final-screenshots
           path: build/screenshots/*.png
+      - uses: actions/upload-artifact@v5
+        with:
+          name: meno-play-brand-assets
+          path: build/store-assets/*.png

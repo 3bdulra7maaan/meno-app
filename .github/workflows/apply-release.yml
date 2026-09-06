@@ -1,0 +1,28 @@
+name: Apply reviewed release preparation
+on:
+  push:
+    branches: [website/official-site]
+    paths: [release-readiness.patch]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.repository == '3bdulra7maaan/meno-app'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: website/official-site
+          fetch-depth: 0
+      - name: Apply exact reviewed source patch to PR3 only
+        run: |
+          set -euo pipefail
+          echo 'afef2b075381c58a3532fed0d1760323b53ade8a1d06cfc3c79079584229e414  release-readiness.patch' | sha256sum --check --status
+          git merge-base --is-ancestor 24bcf0ff200a6c9238e6668786ec783425fbc160 HEAD
+          git apply --check release-readiness.patch
+          git apply --index release-readiness.patch
+          git rm -- release-readiness.patch
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'release: apply reviewed Meno v1 preparation'
+          git push origin HEAD:website/official-site
