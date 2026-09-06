@@ -18,6 +18,7 @@ class InMemoryQuestionRepository implements QuestionRepository {
           body: 'جرّبت التحويل البنكي المباشر الأسبوع الفات، وصل في نفس اليوم. اتأكد من اسم المستفيد مطابق للحساب.',
           createdAt: DateTime.now().subtract(const Duration(hours: 1)),
           helpfulCount: 14,
+          answerType: 'تجربة شخصية',
         ),
       ],
     ),
@@ -36,6 +37,7 @@ class InMemoryQuestionRepository implements QuestionRepository {
           body: 'قدمت إلكتروني ومعاي جواز ساري وصورة شخصية وحجز مبدئي. الرد وصلني بعد أربعة أيام.',
           createdAt: DateTime.now().subtract(const Duration(hours: 18)),
           helpfulCount: 8,
+          answerType: 'تجربة شخصية',
         ),
         Answer(
           id: 'a3',
@@ -43,6 +45,7 @@ class InMemoryQuestionRepository implements QuestionRepository {
           body: 'خلي الاسم في الطلب مطابق للجواز حرفياً عشان ما تتأخر المعاملة.',
           createdAt: DateTime.now().subtract(const Duration(hours: 12)),
           helpfulCount: 5,
+          answerType: 'معلومة أعرفها',
         ),
       ],
     ),

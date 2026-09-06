@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:meno/data/in_memory_question_repository.dart';
 import 'package:meno/main.dart';
 import 'package:meno/models/question.dart';
@@ -10,7 +12,20 @@ void main() {
 
     expect(find.text('Meno'), findsOneWidget);
     expect(find.text('اسأل زول جرّب'), findsOneWidget);
-    expect(find.text('اسأل'), findsOneWidget);
+    expect(find.text('اسأل'), findsNWidgets(2));
+    expect(
+      Theme.of(tester.element(find.text('Meno'))).textTheme.bodyMedium?.fontFamily,
+      'Almarai',
+    );
+
+    for (final asset in [
+      'assets/fonts/Almarai-Light.ttf',
+      'assets/fonts/Almarai-Regular.ttf',
+      'assets/fonts/Almarai-Bold.ttf',
+      'assets/fonts/Almarai-ExtraBold.ttf',
+    ]) {
+      expect((await rootBundle.load(asset)).lengthInBytes, greaterThan(0));
+    }
   });
 
   test('new questions stay pending until moderation', () async {
@@ -39,5 +54,15 @@ void main() {
 
     expect(result.isHelpful, isTrue);
     expect(result.helpfulCount, before + 1);
+  });
+
+  test('formats Arabic answer counts', () {
+    expect(answerCountLabel(0), 'لا توجد إجابات');
+    expect(answerCountLabel(1), 'إجابة واحدة');
+    expect(answerCountLabel(2), 'إجابتان');
+    expect(answerCountLabel(3), '3 إجابات');
+    expect(answerCountLabel(10), '10 إجابات');
+    expect(answerCountLabel(11), '11 إجابة');
+    expect(answerCountLabel(125), '125 إجابة');
   });
 }
