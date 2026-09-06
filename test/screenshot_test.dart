@@ -85,7 +85,7 @@ void main() {
     final key = GlobalKey();
     await pumpPhone(tester, InMemoryQuestionRepository(), key);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('بحث'));
+    await tester.tap(find.text('البحث'));
     await tester.pumpAndSettle();
     await capture(tester, key, 'search-categories');
   }, skip: !enabled);
