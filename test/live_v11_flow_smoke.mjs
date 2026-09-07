@@ -185,7 +185,11 @@ try {
   const commonBanner = {
     image_url: 'https://example.com/meno-v11.png',
     short_text: 'اختبار مؤقت',
+    target_url: null,
     type: 'announcement',
+    display_order: 0,
+    start_at: null,
+    end_at: null,
   };
   await request('/rest/v1/home_banners', adminToken, 'POST', [
     {...commonBanner, id: activeBanner, title: `بنر نشط ${suffix}`, enabled: true},
