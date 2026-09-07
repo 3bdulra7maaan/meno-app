@@ -16,7 +16,9 @@ jobs:
         with:
           node-version: 24
       - name: Validate live verification script
-        run: node --check test/live_v11_flow_smoke.mjs
+        run: |
+          node --check test/live_v11_flow_smoke.mjs
+          node --test test/live_v11_helpers_test.mjs
       - name: Verify Meno v1.1 against live Supabase
         run: node test/live_v11_flow_smoke.mjs
         env:

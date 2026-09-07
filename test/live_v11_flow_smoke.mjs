@@ -1,4 +1,8 @@
 import {randomUUID} from 'node:crypto';
+import {
+  githubErrorAnnotation,
+  supabaseRequestError,
+} from './live_v11_helpers.mjs';
 
 const required = [
   'SUPABASE_URL',
@@ -30,9 +34,16 @@ async function request(path, token = publicKey, method = 'GET', body, prefer) {
   });
   const raw = await response.text();
   if (!response.ok) {
-    throw new Error(
-      `Live check failed: ${method} ${path.split('?')[0]} returned ${response.status}`,
-    );
+    const error = supabaseRequestError({
+      method,
+      path,
+      status: response.status,
+      responseBody: raw,
+    });
+    if (process.env.GITHUB_ACTIONS === 'true') {
+      console.error(githubErrorAnnotation(error.message));
+    }
+    throw error;
   }
   return raw ? JSON.parse(raw) : null;
 }
@@ -174,7 +185,11 @@ try {
   const commonBanner = {
     image_url: 'https://example.com/meno-v11.png',
     short_text: 'اختبار مؤقت',
+    target_url: null,
     type: 'announcement',
+    display_order: 0,
+    start_at: null,
+    end_at: null,
   };
   await request('/rest/v1/home_banners', adminToken, 'POST', [
     {...commonBanner, id: activeBanner, title: `بنر نشط ${suffix}`, enabled: true},

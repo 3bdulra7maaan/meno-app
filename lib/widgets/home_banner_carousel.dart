@@ -73,9 +73,11 @@ class _BannerCard extends StatelessWidget {
               color: const Color(0xFFE5C495),
               child: Image.network(
                 banner.imageUrl,
+                key: Key('home-banner-image-${banner.id}'),
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Center(
-                  child: Icon(
+                errorBuilder: (_, __, ___) => Center(
+                  key: Key('home-banner-placeholder-${banner.id}'),
+                  child: const Icon(
                     Icons.campaign_outlined,
                     color: Color(0xFF121212),
                     size: 38,

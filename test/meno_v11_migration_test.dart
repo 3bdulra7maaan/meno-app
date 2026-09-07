@@ -25,4 +25,18 @@ void main() {
     expect(sql, contains('unique(answer_id, reporter_id)'));
     expect(sql, contains('create policy "public reads active banners"'));
   });
+
+  test('audit trigger fix branches before reading table-specific fields', () {
+    final fix = File(
+      'supabase/migrations/202609070001_fix_moderation_audit_trigger.sql',
+    ).readAsStringSync().toLowerCase();
+
+    expect(fix, isNot(contains('drop table')));
+    expect(fix, isNot(contains('alter table')));
+    expect(fix, contains("if tg_table_name = 'questions' then"));
+    expect(fix, contains("elsif tg_table_name = 'answers' then"));
+    expect(fix, contains("elsif tg_table_name = 'answer_reports' then"));
+    expect(fix, contains('old.status is not distinct from new.status'));
+    expect(fix, contains('old.is_hidden is not distinct from new.is_hidden'));
+  });
 }
