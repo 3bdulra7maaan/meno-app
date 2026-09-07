@@ -16,6 +16,8 @@ test('keeps useful Supabase error details while redacting credentials', () => {
     password: 'password-secret',
     authorization: 'Bearer authorization-secret',
     apikey: 'public-key-that-still-must-not-be-logged',
+    service_role: 'privileged-secret',
+    email: 'admin@example.com',
   });
 
   const safe = safeSupabaseResponseBody(body);
@@ -24,6 +26,7 @@ test('keeps useful Supabase error details while redacting credentials', () => {
   assert.match(safe, /new row violates check constraint/);
   assert.doesNotMatch(safe, /eyJheader|refresh-secret|password-secret/);
   assert.doesNotMatch(safe, /authorization-secret|public-key-that-still/);
+  assert.doesNotMatch(safe, /privileged-secret|admin@example\.com/);
   assert.match(safe, /\[REDACTED\]/);
 });
 
