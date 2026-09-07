@@ -1,5 +1,8 @@
 import {randomUUID} from 'node:crypto';
-import {supabaseRequestError} from './live_v11_helpers.mjs';
+import {
+  githubErrorAnnotation,
+  supabaseRequestError,
+} from './live_v11_helpers.mjs';
 
 const required = [
   'SUPABASE_URL',
@@ -31,12 +34,16 @@ async function request(path, token = publicKey, method = 'GET', body, prefer) {
   });
   const raw = await response.text();
   if (!response.ok) {
-    throw supabaseRequestError({
+    const error = supabaseRequestError({
       method,
       path,
       status: response.status,
       responseBody: raw,
     });
+    if (process.env.GITHUB_ACTIONS === 'true') {
+      console.error(githubErrorAnnotation(error.message));
+    }
+    throw error;
   }
   return raw ? JSON.parse(raw) : null;
 }
