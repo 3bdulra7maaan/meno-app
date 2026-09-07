@@ -21,3 +21,11 @@ export function supabaseRequestError({method, path, status, responseBody}) {
       `Supabase response: ${safeBody}`,
   );
 }
+
+export function githubErrorAnnotation(message) {
+  const escaped = String(message)
+    .replaceAll('%', '%25')
+    .replaceAll('\r', '%0D')
+    .replaceAll('\n', '%0A');
+  return `::error title=Supabase request failed::${escaped}`;
+}
