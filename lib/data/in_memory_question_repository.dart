@@ -1,8 +1,20 @@
+import '../models/home_banner.dart';
 import '../models/question.dart';
+import 'content_safety.dart';
 import 'question_repository.dart';
 import 'question_search.dart';
 
 class InMemoryQuestionRepository implements QuestionRepository {
+  InMemoryQuestionRepository({
+    List<HomeBanner> banners = const [],
+    Set<String> blockedWords = const {},
+  })  : _banners = List.of(banners),
+        _blockedWords = Set.of(blockedWords);
+
+  final List<HomeBanner> _banners;
+  final Set<String> _blockedWords;
+  final Set<String> _reports = {};
+
   final List<Question> _questions = [
     Question(
       id: '1',
@@ -85,12 +97,24 @@ class InMemoryQuestionRepository implements QuestionRepository {
       );
 
   @override
+  Future<List<HomeBanner>> activeBanners() async => List.unmodifiable(
+        _banners.where((banner) {
+          final now = DateTime.now();
+          return banner.enabled &&
+              (banner.startAt == null || !banner.startAt!.isAfter(now)) &&
+              (banner.endAt == null || banner.endAt!.isAfter(now));
+        }).toList()
+          ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder)),
+      );
+
+  @override
   Future<Question> submitQuestion({
     required String title,
     required String body,
     required String category,
     required bool anonymous,
   }) async {
+    _ensureAllowed('$title $body');
     final question = Question(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       title: title,
@@ -109,6 +133,7 @@ class InMemoryQuestionRepository implements QuestionRepository {
     required String questionId,
     required String body,
   }) async {
+    _ensureAllowed(body);
     final answer = Answer(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       author: 'مستخدم مينو',
@@ -137,5 +162,18 @@ class InMemoryQuestionRepository implements QuestionRepository {
       isHelpful: answer.isHelpful,
       helpfulCount: answer.helpfulCount,
     );
+  }
+
+  @override
+  Future<bool> reportAnswer({
+    required String answerId,
+    required String reason,
+  }) async =>
+      _reports.add(answerId);
+
+  void _ensureAllowed(String text) {
+    if (containsBlockedPhrase(text, _blockedWords)) {
+      throw const BlockedContentException();
+    }
   }
 }

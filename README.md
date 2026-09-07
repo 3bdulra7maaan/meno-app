@@ -37,7 +37,7 @@ flutter run \
   --dart-define=SUPABASE_ANON_KEY=YOUR_PUBLISHABLE_KEY
 ```
 
-لا تضع `service_role` key داخل التطبيق. عمليات الاعتماد أو الرفض تنفذ من لوحة إدارة آمنة تستخدم service role في الخادم.
+لا تضع `service_role` key داخل التطبيق أو لوحة الويب. عمليات الإدارة محمية بتسجيل دخول Supabase وRLS وجدول `admin_users`.
 
 ## البناء
 
