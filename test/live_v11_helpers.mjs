@@ -1,7 +1,8 @@
 const sensitiveJsonField =
-  /("(?:access_token|refresh_token|token|password|authorization|apikey)"\s*:\s*")[^"]*(")/gi;
+  /("(?:[^"\\]*token|password|authorization|api[_-]?key|secret|service_role)"\s*:\s*")[^"]*(")/gi;
 const bearerToken = /\bBearer\s+[^\s",}]+/gi;
 const jwtToken = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g;
+const emailAddress = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
 
 export function safeSupabaseResponseBody(raw, maxLength = 2000) {
   if (!raw) return '<empty response body>';
@@ -10,6 +11,7 @@ export function safeSupabaseResponseBody(raw, maxLength = 2000) {
     .replace(sensitiveJsonField, '$1[REDACTED]$2')
     .replace(bearerToken, 'Bearer [REDACTED]')
     .replace(jwtToken, '[REDACTED_TOKEN]')
+    .replace(emailAddress, '[REDACTED_EMAIL]')
     .slice(0, maxLength);
 }
 
