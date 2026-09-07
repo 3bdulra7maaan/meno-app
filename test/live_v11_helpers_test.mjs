@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  githubErrorAnnotation,
   safeSupabaseResponseBody,
   supabaseRequestError,
 } from './live_v11_helpers.mjs';
@@ -24,6 +25,15 @@ test('keeps useful Supabase error details while redacting credentials', () => {
   assert.doesNotMatch(safe, /eyJheader|refresh-secret|password-secret/);
   assert.doesNotMatch(safe, /authorization-secret|public-key-that-still/);
   assert.match(safe, /\[REDACTED\]/);
+});
+
+test('GitHub annotation escapes command-breaking characters', () => {
+  const annotation = githubErrorAnnotation('failure 100%\nnext line');
+
+  assert.equal(
+    annotation,
+    '::error title=Supabase request failed::failure 100%25%0Anext line',
+  );
 });
 
 test('request errors omit query values and include the safe response body', () => {
