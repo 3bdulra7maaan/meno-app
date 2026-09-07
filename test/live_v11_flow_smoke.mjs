@@ -1,4 +1,5 @@
 import {randomUUID} from 'node:crypto';
+import {supabaseRequestError} from './live_v11_helpers.mjs';
 
 const required = [
   'SUPABASE_URL',
@@ -30,9 +31,12 @@ async function request(path, token = publicKey, method = 'GET', body, prefer) {
   });
   const raw = await response.text();
   if (!response.ok) {
-    throw new Error(
-      `Live check failed: ${method} ${path.split('?')[0]} returned ${response.status}`,
-    );
+    throw supabaseRequestError({
+      method,
+      path,
+      status: response.status,
+      responseBody: raw,
+    });
   }
   return raw ? JSON.parse(raw) : null;
 }
