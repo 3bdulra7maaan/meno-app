@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import 'banner_detail_screen.dart';
+import 'brand.dart';
 import 'data/analytics_service.dart';
 import 'data/content_safety.dart';
 import 'data/in_memory_question_repository.dart';
@@ -11,17 +14,8 @@ import 'data/supabase_question_repository.dart';
 import 'models/home_banner.dart';
 import 'models/question.dart';
 import 'onboarding.dart';
+import 'question_share_sheet.dart';
 import 'widgets/home_banner_carousel.dart';
-
-const primaryBlack = Color(0xFF121212);
-const warmGold = Color(0xFFD9A752);
-const darkGold = Color(0xFFC59243);
-const warmBeige = Color(0xFFE5C495);
-const secondaryBeige = Color(0xFFDEB887);
-const surface = Color(0xFFFAF9F6);
-const ink = primaryBlack;
-const muted = Color(0xFF68635C);
-const border = Color(0xFFE8E3DA);
 
 const categories = [
   'الكل',
@@ -63,7 +57,13 @@ Future<void> main() async {
       ? SupabaseQuestionRepository(Supabase.instance.client)
       : InMemoryQuestionRepository();
   final showOnboarding = !(await isOnboardingCompleted());
-  runApp(MenoApp(repository: repository, showOnboarding: showOnboarding));
+  runApp(
+    MenoApp(
+      repository: repository,
+      showOnboarding: showOnboarding,
+      showSplash: true,
+    ),
+  );
 }
 
 String normalizeSupabaseUrl(String value) {
@@ -82,10 +82,12 @@ class MenoApp extends StatelessWidget {
     super.key,
     required this.repository,
     this.showOnboarding = false,
+    this.showSplash = false,
   });
 
   final QuestionRepository repository;
   final bool showOnboarding;
+  final bool showSplash;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -150,12 +152,86 @@ class MenoApp extends StatelessWidget {
         ),
         builder: (context, child) =>
             Directionality(textDirection: TextDirection.rtl, child: child!),
-        home: OnboardingGate(
-          showInitially: showOnboarding,
-          home: HomeShell(repository: repository),
+        home: SplashGate(
+          enabled: showSplash,
+          child: OnboardingGate(
+            showInitially: showOnboarding,
+            home: HomeShell(repository: repository),
+          ),
         ),
       );
 }
+
+class SplashGate extends StatefulWidget {
+  const SplashGate({super.key, required this.enabled, required this.child});
+
+  final bool enabled;
+  final Widget child;
+
+  @override
+  State<SplashGate> createState() => _SplashGateState();
+}
+
+class _SplashGateState extends State<SplashGate> {
+  bool complete = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.enabled) {
+      complete = true;
+    } else {
+      Timer(const Duration(milliseconds: 1100), () {
+        if (mounted) setState(() => complete = true);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      complete ? widget.child : const MenoSplashScreen();
+}
+
+class MenoSplashScreen extends StatelessWidget {
+  const MenoSplashScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => const Scaffold(
+        key: Key('meno-splash'),
+        backgroundColor: primaryBlack,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                MenoMark(size: 112),
+                SizedBox(height: 22),
+                Text(
+                  'Meno',
+                  textDirection: TextDirection.ltr,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 38,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'اسأل زول جرّب',
+                  style: TextStyle(
+                    color: warmBeige,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+enum _MenuAction { about, privacy, contact }
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.repository});
@@ -248,6 +324,53 @@ class _HomeShellState extends State<HomeShell> {
     }
   }
 
+  Future<void> openBanner(HomeBanner banner) async {
+    if (banner.targetType == HomeBannerTargetType.internalPage) {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(builder: (_) => BannerDetailScreen(banner: banner)),
+      );
+      return;
+    }
+    if (banner.targetType != HomeBannerTargetType.externalUrl ||
+        banner.targetUrl == null) {
+      return;
+    }
+    final uri = Uri.tryParse(banner.targetUrl!);
+    if (uri == null || uri.scheme != 'https') return;
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر فتح الرابط الخارجي.')),
+      );
+    }
+  }
+
+  Future<void> handleMenu(_MenuAction action) async {
+    switch (action) {
+      case _MenuAction.about:
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (_) => OnboardingScreen(
+              onDone: () async => Navigator.of(context).pop(),
+            ),
+          ),
+        );
+        return;
+      case _MenuAction.privacy:
+        await launchUrl(
+          Uri.parse('https://3bdulra7maaan.github.io/meno-app/privacy.html'),
+          mode: LaunchMode.externalApplication,
+        );
+        return;
+      case _MenuAction.contact:
+        await launchUrl(
+          Uri.parse('mailto:support.meno.app@gmail.com'),
+          mode: LaunchMode.externalApplication,
+        );
+        return;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = [
@@ -262,59 +385,38 @@ class _HomeShellState extends State<HomeShell> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        toolbarHeight: 68,
+        toolbarHeight: 62,
         titleSpacing: 18,
-        title: LayoutBuilder(
-          builder: (context, constraints) => Row(
-            textDirection: TextDirection.ltr,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Meno',
-                style: TextStyle(
-                  color: primaryBlack,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 24.5,
-                  letterSpacing: -1,
+        title: Row(
+          textDirection: TextDirection.ltr,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const MenoWordmark(height: 34),
+            PopupMenuButton<_MenuAction>(
+              key: const Key('profile-menu'),
+              tooltip: 'القائمة',
+              icon: const CircleAvatar(
+                radius: 18,
+                backgroundColor: Color(0xFFF2EDE5),
+                child: Icon(Icons.person_outline_rounded, color: primaryBlack),
+              ),
+              onSelected: handleMenu,
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: _MenuAction.about,
+                  child: Text('عن Meno'),
                 ),
-              ),
-              Row(
-                children: [
-                  if (constraints.maxWidth >= 300) ...[
-                    IconButton(
-                      key: const Key('about-action'),
-                      tooltip: 'عن Meno',
-                      onPressed: () => Navigator.of(context).push<void>(
-                        MaterialPageRoute(
-                          builder: (_) => OnboardingScreen(
-                            onDone: () async => Navigator.of(context).pop(),
-                          ),
-                        ),
-                      ),
-                      icon: const Icon(Icons.info_outline_rounded),
-                    ),
-                    const SizedBox(width: 4),
-                  ],
-                  FilledButton.icon(
-                    onPressed: openAsk,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: warmGold,
-                      foregroundColor: primaryBlack,
-                      minimumSize: const Size(88, 42),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                    ),
-                    icon: const Icon(Icons.add, size: 19),
-                    label: const Text(
-                      'اسأل',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                PopupMenuItem(
+                  value: _MenuAction.privacy,
+                  child: Text('سياسة الخصوصية'),
+                ),
+                PopupMenuItem(
+                  value: _MenuAction.contact,
+                  child: Text('تواصل معنا'),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
       body: SafeArea(child: pages[index]),
@@ -426,8 +528,10 @@ class _HomeShellState extends State<HomeShell> {
             ),
             FutureBuilder<List<HomeBanner>>(
               future: banners,
-              builder: (context, snapshot) =>
-                  HomeBannerCarousel(banners: snapshot.data ?? const []),
+              builder: (context, snapshot) => HomeBannerCarousel(
+                banners: snapshot.data ?? const [],
+                onBannerTap: openBanner,
+              ),
             ),
             _categoryList(),
             const Padding(
@@ -1289,8 +1393,23 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         resizeToAvoidBottomInset: false,
-        appBar:
-            AppBar(title: const Text('السؤال'), backgroundColor: Colors.white),
+        appBar: AppBar(
+          title: const Text('السؤال'),
+          backgroundColor: Colors.white,
+          actions: [
+            IconButton(
+              key: const Key('share-question-action'),
+              tooltip: 'شارك السؤال',
+              onPressed: () => showModalBottomSheet<void>(
+                context: context,
+                showDragHandle: false,
+                isScrollControlled: true,
+                builder: (_) => QuestionShareSheet(question: widget.question),
+              ),
+              icon: const Icon(Icons.ios_share_rounded),
+            ),
+          ],
+        ),
         body: ListView(
           key: const Key('details-list'),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
