@@ -6,6 +6,12 @@ The dashboard uses the normal Supabase browser client plus Row Level Security. I
 
 Apply `supabase/migrations/202609030001_admin_analytics.sql` in the Supabase SQL editor after the Phase 2 schema. This adds the admin allowlist, answer visibility flag, analytics events, policies, and admin-only reporting functions.
 
+For Meno V1.2, then apply
+`supabase/migrations/202609080001_meno_v12_banner_storage.sql`. It only adds
+banner targeting fields, constraints, a dedicated public image bucket, and
+admin-only Storage policies. It does not drop data; existing HTTPS banner
+targets are preserved and classified as external links.
+
 ## 2. Create the first admin
 
 1. In Supabase Authentication, ensure Email/password is enabled.
