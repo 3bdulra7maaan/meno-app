@@ -4,7 +4,6 @@
         <item name="android:windowSplashScreenBackground">@color/meno_black</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/launch_mark</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@color/meno_black</item>
-        <item name="android:postSplashScreenTheme">@style/NormalTheme</item>
         <item name="android:statusBarColor">@color/meno_black</item>
     </style>
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
