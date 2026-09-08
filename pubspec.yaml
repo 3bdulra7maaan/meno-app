@@ -1,7 +1,7 @@
 name: meno
 description: Meno - اسأل زول جرّب
 publish_to: none
-version: 1.1.0+2
+version: 1.2.0+3
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -12,6 +12,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   supabase_flutter: ^2.8.3
   shared_preferences: ^2.5.3
+  share_plus: ^10.1.4
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -20,6 +22,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/brand/meno-mark.png
+    - assets/brand/meno-wordmark.png
   fonts:
     - family: Almarai
       fonts:
