@@ -185,6 +185,11 @@ class SupabaseQuestionRepository implements QuestionRepository {
         title: row['title'] as String,
         shortText: row['short_text'] as String,
         targetUrl: row['target_url'] as String?,
+        targetType: switch (row['target_type'] as String? ?? 'none') {
+          'internal' => HomeBannerTargetType.internalPage,
+          'external' => HomeBannerTargetType.externalUrl,
+          _ => HomeBannerTargetType.none,
+        },
         type: HomeBannerType.values.byName(row['type'] as String),
         displayOrder: row['display_order'] as int,
         enabled: row['enabled'] as bool? ?? true,

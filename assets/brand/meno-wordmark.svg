@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 140" role="img" aria-labelledby="title">
+  <title id="title">Meno</title>
+  <rect x="8" y="8" width="124" height="124" rx="30" fill="#121212"/>
+  <path d="M35 37h70c12 0 21 9 21 21v36c0 12-9 21-21 21H72l-22 17 5-17H35c-12 0-21-9-21-21V58c0-12 9-21 21-21Z" fill="#D9A752"/>
+  <path d="M39 94V55h12l15 22 15-22h12v39H81V73L66 94 51 73v21H39Zm64 0V55h16v39h-16Z" fill="#121212"/>
+  <text x="156" y="104" fill="#121212" font-family="Almarai, sans-serif" font-size="86" font-weight="800" letter-spacing="-4">Meno</text>
+</svg>

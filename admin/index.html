@@ -10,7 +10,7 @@
 <body>
   <main id="login-view" class="login-shell">
     <form id="login-form" class="login-card">
-      <div class="brand">Meno</div>
+      <img class="brand-logo" src="../assets/brand/meno-wordmark.png" alt="Meno">
       <h1>لوحة الإدارة</h1>
       <p>سجّل الدخول بحساب إداري مصرح له.</p>
       <label>البريد الإلكتروني<input id="email" type="email" autocomplete="username" required></label>
@@ -21,8 +21,9 @@
   </main>
 
   <div id="app-view" class="app" hidden>
-    <header><span class="brand">Meno</span><strong>الإدارة والتحليلات</strong><button id="logout" class="quiet">خروج</button></header>
+    <header><strong>الإدارة والتحليلات</strong><span class="admin-state">حساب إداري مصرح</span><button id="logout" class="quiet">خروج</button></header>
     <nav aria-label="أقسام لوحة الإدارة">
+      <img class="sidebar-logo" src="../assets/brand/meno-wordmark-on-dark.png" alt="Meno">
       <button data-view="dashboard" class="active">الملخص</button>
       <button data-view="pending">قيد المراجعة</button>
       <button data-view="approved">المعتمدة</button>
@@ -68,8 +69,10 @@
         <input id="banner-id" type="hidden">
         <label>العنوان<input id="banner-title" required maxlength="100"></label>
         <label>النص القصير<textarea id="banner-text" maxlength="240"></textarea></label>
-        <label>رابط الصورة HTTPS<input id="banner-image" type="url" required></label>
-        <label>الرابط المستهدف — اختياري<input id="banner-target" type="url"></label>
+        <label>صورة البنر<input id="banner-image-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
+        <input id="banner-image" type="hidden">
+        <div id="banner-upload-progress" class="upload-progress" hidden><div></div><span>جاري رفع الصورة… 0%</span></div>
+        <div class="filters"><label>وجهة البنر<select id="banner-target-type"><option value="none">بدون إجراء</option><option value="internal">صفحة تفاصيل داخل التطبيق</option><option value="external">رابط خارجي</option></select></label><label id="banner-target-wrap" hidden>الرابط الخارجي HTTPS<input id="banner-target" type="url" inputmode="url" placeholder="https://"></label></div>
         <div class="filters"><label>النوع<select id="banner-type"><option value="announcement">إعلان عام</option><option value="promotion">ترويج</option><option value="ad">إعلان مدفوع</option></select></label><label>الترتيب<input id="banner-order" type="number" min="0" value="0"></label><label>يبدأ<input id="banner-start" type="datetime-local"></label><label>ينتهي<input id="banner-end" type="datetime-local"></label></div>
         <label class="check"><input id="banner-enabled" type="checkbox" checked> مفعّل</label>
         <div id="banner-preview" class="banner-preview"></div>
@@ -81,6 +84,6 @@
     <div id="toast" role="status"></div>
   </div>
   <script src="config.js"></script>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

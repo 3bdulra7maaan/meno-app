@@ -22,7 +22,28 @@ void main() {
     expect(dashboard, contains('home_banners'));
     expect(dashboard, contains('data-view="reports"'));
     expect(dashboard, contains('data-view="answers"'));
+    expect(dashboard, contains('banner-image-file'));
+    expect(dashboard, contains('banner-upload-progress'));
+    expect(dashboard, contains('banner-target-type'));
+    expect(dashboard, contains('meno-wordmark-on-dark.png'));
+    expect(dashboard, contains('[hidden]{display:none!important}'));
+    expect(dashboard, contains('storage/v1/object/home-banners'));
+    expect(dashboard, contains('xhr.upload.onprogress'));
+    expect(dashboard, contains('target_type'));
     expect(dashboard.toLowerCase(), isNot(contains('service_role')));
+  });
+
+  test('v1.2 banner storage is public-read and admin-write only', () {
+    final sql = File(
+      'supabase/migrations/202609080001_meno_v12_banner_storage.sql',
+    ).readAsStringSync();
+
+    expect(sql, isNot(contains('service_role')));
+    expect(sql, isNot(contains('drop table')));
+    expect(sql, contains("'home-banners'"));
+    expect(sql, contains('public.is_meno_admin()'));
+    expect(sql, contains('(storage.foldername(name))[1] = auth.uid()::text'));
+    expect(sql, contains("target_type in ('none', 'internal', 'external')"));
   });
 
   test('migration enforces admin RLS and privacy-minimal analytics', () {

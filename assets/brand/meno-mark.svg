@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Meno community mark</title>
+  <rect width="512" height="512" rx="116" fill="#121212"/>
+  <path d="M116 120h280c31 0 56 25 56 56v142c0 31-25 56-56 56H254l-91 71 19-71h-66c-31 0-56-25-56-56V176c0-31 25-56 56-56Z" fill="#D9A752"/>
+  <path d="M146 299V194h31l40 60 40-60h31v105h-31v-58l-40 57-40-57v58h-31Zm177 0V194h43v105h-43Z" fill="#121212"/>
+</svg>

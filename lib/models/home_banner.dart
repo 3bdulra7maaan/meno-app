@@ -1,5 +1,7 @@
 enum HomeBannerType { announcement, promotion, ad }
 
+enum HomeBannerTargetType { none, internalPage, externalUrl }
+
 class HomeBanner {
   const HomeBanner({
     required this.id,
@@ -9,6 +11,7 @@ class HomeBanner {
     required this.type,
     required this.displayOrder,
     this.enabled = true,
+    this.targetType = HomeBannerTargetType.none,
     this.targetUrl,
     this.startAt,
     this.endAt,
@@ -22,6 +25,7 @@ class HomeBanner {
   final HomeBannerType type;
   final int displayOrder;
   final bool enabled;
+  final HomeBannerTargetType targetType;
   final DateTime? startAt;
   final DateTime? endAt;
 }

@@ -13,11 +13,13 @@ void main() {
     await tester.pumpWidget(MenoApp(repository: InMemoryQuestionRepository()));
     await tester.pumpAndSettle();
 
-    expect(find.text('Meno'), findsOneWidget);
+    expect(find.byKey(const Key('meno-wordmark')), findsOneWidget);
     expect(find.text('اسأل زول جرّب'), findsOneWidget);
-    expect(find.text('اسأل'), findsNWidgets(2));
+    expect(find.text('اسأل'), findsOneWidget);
+    expect(find.byKey(const Key('about-action')), findsNothing);
+    expect(find.byKey(const Key('profile-menu')), findsOneWidget);
     expect(
-      Theme.of(tester.element(find.text('Meno')))
+      Theme.of(tester.element(find.text('اسأل زول جرّب')))
           .textTheme
           .bodyMedium
           ?.fontFamily,
@@ -32,6 +34,35 @@ void main() {
     ]) {
       expect((await rootBundle.load(asset)).lengthInBytes, greaterThan(0));
     }
+  });
+
+  testWidgets('branded splash hands off to Home', (tester) async {
+    await tester.pumpWidget(
+      MenoApp(
+        repository: InMemoryQuestionRepository(),
+        showSplash: true,
+      ),
+    );
+
+    expect(find.byKey(const Key('meno-splash')), findsOneWidget);
+    expect(find.byKey(const Key('meno-mark')), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('meno-wordmark')), findsOneWidget);
+  });
+
+  testWidgets('Question Details exposes the share flow', (tester) async {
+    await tester.pumpWidget(MenoApp(repository: InMemoryQuestionRepository()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('أفضل طريقة للتحويل من قطر للسودان شنو؟'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('share-question-action')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('share-question-action')));
+    await tester.pumpAndSettle();
+    expect(find.text('شارك السؤال'), findsOneWidget);
+    expect(find.byKey(const Key('share-native-button')), findsOneWidget);
+    expect(find.byKey(const Key('copy-question-link')), findsOneWidget);
   });
 
   test('new questions stay pending until moderation', () async {

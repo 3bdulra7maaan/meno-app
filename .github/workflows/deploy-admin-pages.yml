@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - admin/**
+      - assets/brand/**
       - assets/fonts/**
       - docs/**
       - .github/workflows/deploy-admin-pages.yml
@@ -42,9 +43,10 @@ jobs:
           test -n "$SUPABASE_ANON_KEY"
 
           rm -rf dist
-          mkdir -p dist/admin dist/assets/fonts
+          mkdir -p dist/admin dist/assets/brand dist/assets/fonts
           cp -R docs/. dist/
           cp admin/index.html admin/styles.css admin/app.js dist/admin/
+          cp assets/brand/meno-*.png dist/assets/brand/
           cp assets/fonts/Almarai-*.ttf dist/assets/fonts/
 
           node <<'NODE'

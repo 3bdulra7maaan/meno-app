@@ -35,6 +35,23 @@ void main() {
     await iconLoader.load();
   });
 
+  Future<void> precacheBrandImages(WidgetTester tester) async {
+    final context = tester.element(find.byType(MaterialApp));
+    await tester.runAsync(() async {
+      await Future.wait([
+        precacheImage(
+          const AssetImage('assets/brand/meno-mark.png'),
+          context,
+        ),
+        precacheImage(
+          const AssetImage('assets/brand/meno-wordmark.png'),
+          context,
+        ),
+      ]);
+    });
+    await tester.pump();
+  }
+
   Future<void> pumpPhone(
     WidgetTester tester,
     QuestionRepository repository,
@@ -50,6 +67,7 @@ void main() {
         child: MenoApp(repository: repository),
       ),
     );
+    await precacheBrandImages(tester);
   }
 
   Future<void> capture(WidgetTester tester, GlobalKey key, String name) async {
@@ -80,6 +98,62 @@ void main() {
 
     await capture(tester, key, 'home');
   }, skip: !enabled || remainingOnly);
+
+  testWidgets('captures branded splash', (tester) async {
+    final key = GlobalKey();
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: key,
+        child: MenoApp(
+          repository: InMemoryQuestionRepository(),
+          showSplash: true,
+        ),
+      ),
+    );
+    await tester.pump();
+    await precacheBrandImages(tester);
+    expect(find.byKey(const Key('meno-splash')), findsOneWidget);
+    await capture(tester, key, 'splash');
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pumpWidget(const SizedBox.shrink());
+  }, skip: !enabled);
+
+  testWidgets('captures banner detail', (tester) async {
+    final key = GlobalKey();
+    final repository = InMemoryQuestionRepository(
+      banners: [
+        HomeBanner(
+          id: 'screenshot-banner',
+          imageUrl: 'https://example.com/banner.png',
+          title: 'دليل خدمات Meno الجديد',
+          shortText: 'معلومات عملية ومختصرة تساعدك تبدأ من المكان الصحيح.',
+          type: HomeBannerType.announcement,
+          targetType: HomeBannerTargetType.internalPage,
+          displayOrder: 0,
+        ),
+      ],
+    );
+    await pumpPhone(tester, repository, key);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('home-banner-screenshot-banner')));
+    await tester.pumpAndSettle();
+    await capture(tester, key, 'banner-detail');
+  }, skip: !enabled);
+
+  testWidgets('captures question share flow', (tester) async {
+    final key = GlobalKey();
+    await pumpPhone(tester, InMemoryQuestionRepository(), key);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('أفضل طريقة للتحويل من قطر للسودان شنو؟'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('share-question-action')));
+    await tester.pumpAndSettle();
+    await capture(tester, key, 'share-flow');
+  }, skip: !enabled);
 
   testWidgets('captures search and categories', (tester) async {
     final key = GlobalKey();
