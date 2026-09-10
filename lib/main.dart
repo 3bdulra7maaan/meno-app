@@ -879,15 +879,18 @@ class _SectionHeader extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
         child: Row(
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                color: cream,
-                fontSize: 19,
-                fontWeight: FontWeight.w800,
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: cream,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
-            const Spacer(),
             if (action != null)
               TextButton(
                 onPressed: onAction,
@@ -985,10 +988,10 @@ class _MenoNavItem extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: primary ? 52 : 34,
-                  height: primary ? 52 : 32,
+                  width: primary ? 48 : 34,
+                  height: primary ? 48 : 32,
                   transform: primary
-                      ? Matrix4.translationValues(0, -12, 0)
+                      ? Matrix4.translationValues(0, -10, 0)
                       : null,
                   decoration: primary
                       ? BoxDecoration(
@@ -1006,7 +1009,7 @@ class _MenoNavItem extends StatelessWidget {
                   ),
                 ),
                 Transform.translate(
-                  offset: Offset(0, primary ? -10 : 0),
+                  offset: Offset(0, primary ? -8 : 0),
                   child: Text(
                     label,
                     maxLines: 1,
@@ -1126,7 +1129,9 @@ class QuestionCard extends StatelessWidget {
                     const SizedBox(width: 5),
                     Text(
                       answerCountLabel(question.answers.length),
-                      style: const TextStyle(color: muted),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: muted, fontSize: 12),
                     ),
                   ],
                 ),

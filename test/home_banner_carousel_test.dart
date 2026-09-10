@@ -161,6 +161,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('banner-detail-screen')), findsOneWidget);
     expect(find.text('تفاصيل الإعلان'), findsOneWidget);
+    await tester.drag(
+      find.byKey(const Key('banner-detail-screen')),
+      const Offset(0, -320),
+    );
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('share-banner-action')), findsOneWidget);
   });
 }
