@@ -47,6 +47,10 @@ void main() {
           const AssetImage('assets/brand/meno-wordmark.png'),
           context,
         ),
+        precacheImage(
+          const AssetImage('assets/brand/meno-wordmark-on-dark.png'),
+          context,
+        ),
       ]);
     });
     await tester.pump();
@@ -98,6 +102,30 @@ void main() {
 
     await capture(tester, key, 'home');
   }, skip: !enabled || remainingOnly);
+
+  testWidgets('captures home with banner', (tester) async {
+    final key = GlobalKey();
+    await pumpPhone(
+      tester,
+      InMemoryQuestionRepository(
+        banners: [
+          HomeBanner(
+            id: 'home-reference-banner',
+            imageUrl: 'https://example.com/banner.png',
+            title: 'صحتك تبدأ من وعيك',
+            shortText: 'معلومة موثوقة من أهل التجربة',
+            type: HomeBannerType.announcement,
+            targetType: HomeBannerTargetType.internalPage,
+            displayOrder: 0,
+          ),
+        ],
+      ),
+      key,
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('home-banners')), findsOneWidget);
+    await capture(tester, key, 'home-with-banner');
+  }, skip: !enabled);
 
   testWidgets('captures branded splash', (tester) async {
     final key = GlobalKey();
@@ -171,6 +199,23 @@ void main() {
     await tester.tap(find.text('اسأل').first);
     await tester.pumpAndSettle();
     await capture(tester, key, 'ask-question');
+  }, skip: !enabled);
+
+  testWidgets('captures My Questions', (tester) async {
+    final key = GlobalKey();
+    final repository = InMemoryQuestionRepository();
+    await repository.submitQuestion(
+      title: 'أفضل طريقة لشحن أغراض للسودان شنو؟',
+      body: 'داير أعرف تجربة الناس مع شركات الشحن والمدة والتكلفة.',
+      category: 'الشحن',
+      anonymous: true,
+    );
+    await pumpPhone(tester, repository, key);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('أسئلتي').last);
+    await tester.pumpAndSettle();
+    expect(find.text('قيد المراجعة'), findsOneWidget);
+    await capture(tester, key, 'my-questions');
   }, skip: !enabled);
 
   testWidgets('captures question details and answers', (tester) async {

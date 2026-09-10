@@ -42,11 +42,39 @@ class QuestionShareSheet extends StatelessWidget {
               style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
-            Text(
-              question.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: muted, height: 1.6),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: darkSurface,
+                border: Border.all(color: border),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      MenoMark(size: 24),
+                      SizedBox(width: 7),
+                      Text(
+                        'Meno',
+                        textDirection: TextDirection.ltr,
+                        style: TextStyle(
+                          color: warmGold,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    question.title,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: cream, height: 1.6),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 18),
             FilledButton.icon(

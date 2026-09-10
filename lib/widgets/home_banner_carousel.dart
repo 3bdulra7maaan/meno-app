@@ -82,11 +82,11 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
     if (widget.banners.isEmpty) return const SizedBox.shrink();
     return Padding(
       key: const Key('home-banners'),
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
       child: Column(
         children: [
           SizedBox(
-            height: 142,
+            height: 168,
             child: Listener(
               onPointerDown: (_) => pause(),
               onPointerUp: (_) => resume(),
@@ -147,7 +147,7 @@ class _BannerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ClipRRect(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         child: Material(
           color: const Color(0xFFE5C495),
           child: InkWell(
@@ -160,25 +160,28 @@ class _BannerCard extends StatelessWidget {
                   banner.imageUrl,
                   key: Key('home-banner-image-${banner.id}'),
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Center(
+                  errorBuilder: (_, __, ___) => Container(
                     key: Key('home-banner-placeholder-${banner.id}'),
+                    color: const Color(0xFFE5C495),
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.only(left: 36),
                     child: const Icon(
-                      Icons.campaign_outlined,
-                      color: Color(0xFF121212),
-                      size: 38,
+                      Icons.auto_awesome_rounded,
+                      color: Color(0xFFC59243),
+                      size: 46,
                     ),
                   ),
                 ),
                 Positioned.fill(
                   child: ColoredBox(
-                    color: Colors.black.withValues(alpha: .55),
+                    color: Colors.black.withValues(alpha: .48),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (banner.type == HomeBannerType.ad)
                         Container(
@@ -202,24 +205,47 @@ class _BannerCard extends StatelessWidget {
                         ),
                       Text(
                         banner.title,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                       if (banner.shortText.isNotEmpty)
                         Text(
                           banner.shortText,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: Color(0xFFF7F0E5),
                             fontSize: 13,
                           ),
                         ),
+                      if (onTap != null) ...[
+                        const SizedBox(height: 11),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD9A752),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'اكتشف المزيد',
+                            style: TextStyle(
+                              color: Color(0xFF121212),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
