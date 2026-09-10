@@ -16,8 +16,11 @@ void main() {
     expect(find.byKey(const Key('meno-wordmark')), findsOneWidget);
     expect(find.text('اسأل زول جرّب'), findsOneWidget);
     expect(find.text('اسأل'), findsOneWidget);
+    expect(find.byKey(const Key('bottom-ask-action')), findsOneWidget);
     expect(find.byKey(const Key('about-action')), findsNothing);
     expect(find.byKey(const Key('profile-menu')), findsOneWidget);
+    expect(Theme.of(tester.element(find.byType(HomeShell))).brightness,
+        Brightness.dark);
     expect(
       Theme.of(tester.element(find.text('اسأل زول جرّب')))
           .textTheme
@@ -193,7 +196,7 @@ void main() {
     await tester.tap(find.byKey(const Key('onboarding-action')));
     await tester.pumpAndSettle();
 
-    expect(find.text('أسئلة من المجتمع'), findsOneWidget);
+    expect(find.text('أحدث الأسئلة'), findsOneWidget);
     expect(await isOnboardingCompleted(), isTrue);
   });
 

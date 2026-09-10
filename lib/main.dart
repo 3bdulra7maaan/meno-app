@@ -95,11 +95,14 @@ class MenoApp extends StatelessWidget {
         title: 'Meno',
         theme: ThemeData(
           fontFamily: 'Almarai',
+          brightness: Brightness.dark,
           colorScheme: ColorScheme.fromSeed(
+            brightness: Brightness.dark,
             seedColor: primaryBlack,
-            primary: primaryBlack,
+            primary: warmGold,
             secondary: warmGold,
-            surface: Colors.white,
+            surface: darkSurface,
+            onSurface: cream,
           ),
           scaffoldBackgroundColor: surface,
           useMaterial3: true,
@@ -108,20 +111,20 @@ class MenoApp extends StatelessWidget {
               fontSize: 24,
               height: 1.4,
               fontWeight: FontWeight.w800,
-              color: ink,
+              color: cream,
             ),
             titleLarge: TextStyle(
               fontSize: 19,
               height: 1.5,
               fontWeight: FontWeight.w800,
-              color: ink,
+              color: cream,
             ),
-            bodyLarge: TextStyle(fontSize: 16, height: 1.7, color: ink),
+            bodyLarge: TextStyle(fontSize: 16, height: 1.7, color: cream),
             bodyMedium: TextStyle(fontSize: 14, height: 1.6, color: muted),
           ),
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: darkSurface,
             counterStyle: const TextStyle(
               color: muted,
               fontSize: 11,
@@ -142,11 +145,37 @@ class MenoApp extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: darkGold, width: 1.5),
+              borderSide: const BorderSide(color: warmGold, width: 1.5),
+            ),
+          ),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: surface,
+            foregroundColor: cream,
+            elevation: 0,
+            centerTitle: true,
+          ),
+          cardTheme: CardThemeData(
+            color: darkSurface,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              side: const BorderSide(color: border),
+              borderRadius: BorderRadius.circular(18),
+            ),
+          ),
+          dialogTheme: DialogThemeData(
+            backgroundColor: raisedSurface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
+          ),
+          popupMenuTheme: PopupMenuThemeData(
+            color: raisedSurface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
           snackBarTheme: const SnackBarThemeData(
-            backgroundColor: primaryBlack,
+            backgroundColor: raisedSurface,
             behavior: SnackBarBehavior.floating,
           ),
         ),
@@ -206,15 +235,7 @@ class MenoSplashScreen extends StatelessWidget {
               children: [
                 MenoMark(size: 112),
                 SizedBox(height: 22),
-                Text(
-                  'Meno',
-                  textDirection: TextDirection.ltr,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 38,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+                MenoWordmark(height: 48, onDark: true),
                 SizedBox(height: 6),
                 Text(
                   'اسأل زول جرّب',
@@ -371,6 +392,48 @@ class _HomeShellState extends State<HomeShell> {
     }
   }
 
+  Future<void> openProfileMenu() async {
+    final action = await showModalBottomSheet<_MenuAction>(
+      context: context,
+      backgroundColor: raisedSurface,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(
+              leading: CircleAvatar(
+                backgroundColor: warmGold,
+                child: Icon(Icons.person_outline_rounded, color: primaryBlack),
+              ),
+              title: Text(
+                'حسابي',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: Text('تصفح عام بهوية مجهولة محفوظة على جهازك'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline_rounded),
+              title: const Text('عن Meno'),
+              onTap: () => Navigator.pop(context, _MenuAction.about),
+            ),
+            ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: const Text('سياسة الخصوصية'),
+              onTap: () => Navigator.pop(context, _MenuAction.privacy),
+            ),
+            ListTile(
+              leading: const Icon(Icons.mail_outline_rounded),
+              title: const Text('تواصل معنا'),
+              onTap: () => Navigator.pop(context, _MenuAction.contact),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (action != null && mounted) await handleMenu(action);
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = [
@@ -384,21 +447,37 @@ class _HomeShellState extends State<HomeShell> {
     ];
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        toolbarHeight: 62,
-        titleSpacing: 18,
+        backgroundColor: surface,
+        toolbarHeight: 72,
+        titleSpacing: 16,
         title: Row(
           textDirection: TextDirection.ltr,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const MenoWordmark(height: 34),
+            const Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                MenoWordmark(height: 34, onDark: true),
+                SizedBox(height: 2),
+                Text(
+                  'اسأل زول جرّب',
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(
+                    color: muted,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
             PopupMenuButton<_MenuAction>(
               key: const Key('profile-menu'),
               tooltip: 'القائمة',
               icon: const CircleAvatar(
-                radius: 18,
-                backgroundColor: Color(0xFFF2EDE5),
-                child: Icon(Icons.person_outline_rounded, color: primaryBlack),
+                radius: 19,
+                backgroundColor: cream,
+                child: Icon(Icons.person_outline_rounded, color: darkGold),
               ),
               onSelected: handleMenu,
               itemBuilder: (_) => const [
@@ -420,48 +499,18 @@ class _HomeShellState extends State<HomeShell> {
         ),
       ),
       body: SafeArea(child: pages[index]),
-      bottomNavigationBar: NavigationBar(
-        height: 70,
-        backgroundColor: Colors.white,
+      bottomNavigationBar: _MenoBottomNavigation(
         selectedIndex: index == 0 ? 0 : (index == 1 ? 1 : 3),
-        indicatorColor: warmGold.withValues(alpha: .45),
-        onDestinationSelected: (value) {
+        onSelected: (value) {
           if (value == 2) {
             openAsk();
+          } else if (value == 4) {
+            openProfileMenu();
           } else {
             setState(() => index = value == 0 ? 0 : (value == 1 ? 1 : 2));
             if (value == 3) myQuestionsKey.currentState?.refresh();
           }
         },
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'الرئيسية',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search),
-            label: 'البحث',
-          ),
-          NavigationDestination(
-            icon: Container(
-              width: 42,
-              height: 34,
-              decoration: BoxDecoration(
-                color: warmGold,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.add_rounded, color: primaryBlack),
-            ),
-            label: 'اسأل',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.list_alt_outlined),
-            selectedIcon: Icon(Icons.list_alt_rounded),
-            label: 'أسئلتي',
-          ),
-        ],
       ),
     );
   }
@@ -471,61 +520,6 @@ class _HomeShellState extends State<HomeShell> {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 20),
           children: [
-            Container(
-              decoration: const BoxDecoration(
-                color: primaryBlack,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(26),
-                  bottomRight: Radius.circular(26),
-                ),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'اسأل زول جرّب',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'إجابات قريبة منك، من ناس عندهم تجربة حقيقية.',
-                    style: TextStyle(color: Color(0xFFF2E9DA), fontSize: 15),
-                  ),
-                  const SizedBox(height: 10),
-                  InkWell(
-                    onTap: () => setState(() => index = 1),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.search_rounded, color: primaryBlack),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'فتّش في تجارب الناس...',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: muted, fontSize: 15),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
             FutureBuilder<List<HomeBanner>>(
               future: banners,
               builder: (context, snapshot) => HomeBannerCarousel(
@@ -533,18 +527,8 @@ class _HomeShellState extends State<HomeShell> {
                 onBannerTap: openBanner,
               ),
             ),
-            _categoryList(),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(18, 6, 18, 2),
-              child: Text(
-                'أسئلة من المجتمع',
-                style: TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w800,
-                  color: ink,
-                ),
-              ),
-            ),
+            _homeCategories(),
+            const _SectionHeader(title: 'أحدث الأسئلة'),
             _questionList(onReset: () => setState(() => category = 'الكل')),
           ],
         ),
@@ -614,6 +598,80 @@ class _HomeShellState extends State<HomeShell> {
         onSelected: (value) => setState(() => category = value),
       );
 
+  Widget _homeCategories() => Column(
+        children: [
+          _SectionHeader(
+            title: 'الفئات',
+            action: 'عرض الكل',
+            onAction: () => setState(() => category = 'الكل'),
+          ),
+          SizedBox(
+            height: 112,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              scrollDirection: Axis.horizontal,
+              itemCount: categories.length - 1,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (_, index) {
+                final value = categories[index + 1];
+                final selected = category == value;
+                return InkWell(
+                  key: Key('home-category-$value'),
+                  borderRadius: BorderRadius.circular(17),
+                  onTap: () {
+                    setState(() => category = value);
+                    unawaited(
+                      AnalyticsService.instance.track(
+                        'category_selected',
+                        category: value,
+                      ),
+                    );
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    width: 88,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: selected ? raisedSurface : darkSurface,
+                      border: Border.all(
+                        color: selected ? warmGold : border,
+                      ),
+                      borderRadius: BorderRadius.circular(17),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _categoryIcon(value),
+                          color: selected ? warmGold : warmBeige,
+                          size: 29,
+                        ),
+                        const SizedBox(height: 9),
+                        Text(
+                          value,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: selected ? cream : muted,
+                            fontSize: 11,
+                            height: 1.35,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      );
+
   Widget _categoryChips({
     required String selectedCategory,
     required ValueChanged<String> onSelected,
@@ -631,11 +689,11 @@ class _HomeShellState extends State<HomeShell> {
               label: Text(categories[i]),
               selected: selected,
               showCheckmark: false,
-              backgroundColor: Colors.white,
+              backgroundColor: darkSurface,
               selectedColor: warmGold,
               side: BorderSide(color: selected ? darkGold : border),
-              labelStyle: const TextStyle(
-                color: primaryBlack,
+              labelStyle: TextStyle(
+                color: selected ? primaryBlack : cream,
                 fontWeight: FontWeight.w700,
               ),
               shape: RoundedRectangleBorder(
@@ -675,13 +733,13 @@ class _HomeShellState extends State<HomeShell> {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: warmBeige.withValues(alpha: .52),
+                      color: raisedSurface,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.wifi_off_rounded,
                       size: 34,
-                      color: primaryBlack,
+                      color: warmGold,
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -734,13 +792,13 @@ class _HomeShellState extends State<HomeShell> {
                     width: 72,
                     height: 72,
                     decoration: const BoxDecoration(
-                      color: Color(0xFFF2EDE5),
+                      color: raisedSurface,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.search_off_rounded,
                       size: 34,
-                      color: primaryBlack,
+                      color: warmGold,
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -798,6 +856,181 @@ class _HomeShellState extends State<HomeShell> {
       );
 }
 
+IconData _categoryIcon(String category) => switch (category) {
+      'الصحة' => Icons.favorite_rounded,
+      'السفر والتأشيرات' => Icons.flight_takeoff_rounded,
+      'السيارات' => Icons.directions_car_filled_rounded,
+      'السكن' => Icons.home_work_rounded,
+      'التعليم' => Icons.school_rounded,
+      'البنوك والتحويلات' => Icons.account_balance_rounded,
+      'الاتصالات والإنترنت' => Icons.wifi_rounded,
+      'الوظائف' => Icons.work_rounded,
+      'التسوق والأسعار' => Icons.shopping_bag_rounded,
+      'المغتربين' => Icons.public_rounded,
+      'الشحن' => Icons.local_shipping_rounded,
+      'الخدمات' => Icons.handyman_rounded,
+      'المعاملات الحكومية' => Icons.assignment_rounded,
+      _ => Icons.grid_view_rounded,
+    };
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.action, this.onAction});
+  final String title;
+  final String? action;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+        child: Row(
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: cream,
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const Spacer(),
+            if (action != null)
+              TextButton(
+                onPressed: onAction,
+                child: Text(
+                  action!,
+                  style: const TextStyle(color: muted, fontSize: 12),
+                ),
+              ),
+          ],
+        ),
+      );
+}
+
+class _MenoBottomNavigation extends StatelessWidget {
+  const _MenoBottomNavigation({
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: surface,
+        child: SafeArea(
+          top: false,
+          child: Container(
+            height: 72,
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: border)),
+            ),
+            child: Row(
+              children: [
+                _MenoNavItem(
+                  label: 'الرئيسية',
+                  icon: Icons.home_rounded,
+                  selected: selectedIndex == 0,
+                  onTap: () => onSelected(0),
+                ),
+                _MenoNavItem(
+                  label: 'البحث',
+                  icon: Icons.search_rounded,
+                  selected: selectedIndex == 1,
+                  onTap: () => onSelected(1),
+                ),
+                _MenoNavItem(
+                  key: const Key('bottom-ask-action'),
+                  label: 'اسأل',
+                  icon: Icons.add_rounded,
+                  primary: true,
+                  selected: false,
+                  onTap: () => onSelected(2),
+                ),
+                _MenoNavItem(
+                  label: 'أسئلتي',
+                  icon: Icons.assignment_outlined,
+                  selected: selectedIndex == 3,
+                  onTap: () => onSelected(3),
+                ),
+                _MenoNavItem(
+                  label: 'حسابي',
+                  icon: Icons.person_outline_rounded,
+                  selected: false,
+                  onTap: () => onSelected(4),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class _MenoNavItem extends StatelessWidget {
+  const _MenoNavItem({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+    this.primary = false,
+  });
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final bool primary;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            height: 72,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: primary ? 52 : 34,
+                  height: primary ? 52 : 32,
+                  transform: primary
+                      ? Matrix4.translationValues(0, -12, 0)
+                      : null,
+                  decoration: primary
+                      ? BoxDecoration(
+                          color: warmGold,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: surface, width: 5),
+                        )
+                      : null,
+                  child: Icon(
+                    icon,
+                    color: primary
+                        ? primaryBlack
+                        : (selected ? warmGold : muted),
+                    size: primary ? 29 : 23,
+                  ),
+                ),
+                Transform.translate(
+                  offset: Offset(0, primary ? -10 : 0),
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: primary || selected ? warmGold : muted,
+                      fontSize: 10,
+                      fontWeight: selected || primary
+                          ? FontWeight.w800
+                          : FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
 class QuestionCard extends StatelessWidget {
   const QuestionCard({super.key, required this.question, required this.onTap});
   final Question question;
@@ -807,7 +1040,7 @@ class QuestionCard extends StatelessWidget {
   Widget build(BuildContext context) => Card(
         margin: const EdgeInsets.fromLTRB(14, 5, 14, 5),
         elevation: 0,
-        color: Colors.white,
+        color: darkSurface,
         shape: RoundedRectangleBorder(
           side: const BorderSide(color: border),
           borderRadius: BorderRadius.circular(18),
@@ -829,7 +1062,7 @@ class QuestionCard extends StatelessWidget {
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF5EBDD),
+                          color: warmGold.withValues(alpha: .14),
                           borderRadius: BorderRadius.circular(9),
                         ),
                         child: Text(
@@ -837,7 +1070,7 @@ class QuestionCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: primaryBlack,
+                            color: warmGold,
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
                           ),
@@ -848,8 +1081,7 @@ class QuestionCard extends StatelessWidget {
                     const Spacer(),
                     Text(
                       _timeAgo(question.createdAt),
-                      style:
-                          const TextStyle(color: Colors.black45, fontSize: 12),
+                      style: const TextStyle(color: muted, fontSize: 12),
                     ),
                   ],
                 ),
@@ -861,7 +1093,7 @@ class QuestionCard extends StatelessWidget {
                   question.body,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.black54, height: 1.5),
+                  style: const TextStyle(color: muted, height: 1.5),
                 ),
                 const SizedBox(height: 9),
                 const Divider(height: 1, color: border),
@@ -870,11 +1102,11 @@ class QuestionCard extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 14,
-                      backgroundColor: const Color(0xFFF2EDE5),
+                      backgroundColor: raisedSurface,
                       child: Text(
                         question.author.characters.first,
                         style: const TextStyle(
-                          color: primaryBlack,
+                          color: warmGold,
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                         ),
@@ -894,12 +1126,12 @@ class QuestionCard extends StatelessWidget {
                     const Icon(
                       Icons.chat_bubble_outline,
                       size: 18,
-                      color: Colors.black54,
+                      color: muted,
                     ),
                     const SizedBox(width: 5),
                     Text(
                       answerCountLabel(question.answers.length),
-                      style: const TextStyle(color: Colors.black54),
+                      style: const TextStyle(color: muted),
                     ),
                   ],
                 ),
@@ -1027,7 +1259,7 @@ class _MyQuestionsScreenState extends State<MyQuestionsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('أسئلتي'),
-        backgroundColor: Colors.white,
+        backgroundColor: surface,
       ),
       body: content,
     );
@@ -1042,7 +1274,7 @@ class _MyQuestionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
         elevation: 0,
-        color: Colors.white,
+        color: darkSurface,
         shape: RoundedRectangleBorder(
           side: const BorderSide(color: border),
           borderRadius: BorderRadius.circular(18),
@@ -1064,7 +1296,7 @@ class _MyQuestionCard extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5EBDD),
+                        color: warmGold.withValues(alpha: .14),
                         borderRadius: BorderRadius.circular(9),
                       ),
                       child: Text(
@@ -1170,7 +1402,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
             'سؤال جديد',
             style: TextStyle(fontWeight: FontWeight.w800),
           ),
-          backgroundColor: Colors.white,
+          backgroundColor: surface,
         ),
         body: Form(
           key: formKey,
@@ -1181,13 +1413,14 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: warmBeige.withValues(alpha: .28),
+                  color: raisedSurface,
+                  border: Border.all(color: border),
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.lightbulb_outline_rounded, color: primaryBlack),
+                    Icon(Icons.lightbulb_outline_rounded, color: warmGold),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -1197,7 +1430,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
                             'خلي سؤالك واضح ومحدد',
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
-                              color: primaryBlack,
+                              color: cream,
                               fontSize: 16,
                             ),
                           ),
@@ -1205,7 +1438,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
                           Text(
                             'قول للناس شنو جرّبت وشنو بالضبط الداير تعرفو.',
                             style: TextStyle(
-                              color: Color(0xFF67583F),
+                              color: muted,
                               height: 1.55,
                             ),
                           ),
@@ -1261,7 +1494,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
               ),
               const SizedBox(height: 14),
               Material(
-                color: Colors.white,
+                color: darkSurface,
                 shape: RoundedRectangleBorder(
                   side: const BorderSide(color: border),
                   borderRadius: BorderRadius.circular(18),
@@ -1273,7 +1506,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
                   activeThumbColor: darkGold,
                   secondary: const Icon(
                     Icons.visibility_off_outlined,
-                    color: primaryBlack,
+                    color: warmGold,
                   ),
                   title: const Text(
                     'اسأل كمجهول',
@@ -1305,7 +1538,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
               const Text(
                 'كل الأسئلة بتتراجع قبل ما تظهر للناس.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black45, fontSize: 12),
+                style: TextStyle(color: muted, fontSize: 12),
               ),
             ],
           ),
@@ -1395,7 +1628,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: const Text('السؤال'),
-          backgroundColor: Colors.white,
+          backgroundColor: surface,
           actions: [
             IconButton(
               key: const Key('share-question-action'),
@@ -1419,7 +1652,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
               margin: const EdgeInsets.fromLTRB(14, 10, 14, 4),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: darkSurface,
                 border: Border.all(color: border),
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -1435,7 +1668,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5EBDD),
+                            color: warmGold.withValues(alpha: .14),
                             borderRadius: BorderRadius.circular(9),
                           ),
                           child: Text(
@@ -1443,7 +1676,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: primaryBlack,
+                              color: warmGold,
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
                             ),
@@ -1474,11 +1707,11 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
                     children: [
                       const CircleAvatar(
                         radius: 15,
-                        backgroundColor: Color(0xFFF2EDE5),
+                        backgroundColor: raisedSurface,
                         child: Icon(
                           Icons.person_outline_rounded,
                           size: 17,
-                          color: primaryBlack,
+                          color: warmGold,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1547,7 +1780,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
           child: SafeArea(
             top: false,
             child: Container(
-              color: Colors.white,
+              color: surface,
               padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 52),
@@ -1575,7 +1808,10 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
                         height: 48,
                       ),
                       style:
-                          IconButton.styleFrom(backgroundColor: primaryBlack),
+                          IconButton.styleFrom(
+                            backgroundColor: warmGold,
+                            foregroundColor: primaryBlack,
+                          ),
                       icon: const Icon(Icons.send_rounded),
                     ),
                   ],
@@ -1601,7 +1837,7 @@ class _AnswerCard extends StatelessWidget {
   Widget build(BuildContext context) => Card(
         margin: const EdgeInsets.fromLTRB(12, 5, 12, 5),
         elevation: 0,
-        color: Colors.white,
+        color: darkSurface,
         shape: RoundedRectangleBorder(
           side: const BorderSide(color: border),
           borderRadius: BorderRadius.circular(18),
@@ -1615,8 +1851,8 @@ class _AnswerCard extends StatelessWidget {
                 children: [
                   const CircleAvatar(
                     radius: 16,
-                    backgroundColor: primaryBlack,
-                    child: Icon(Icons.person, color: Colors.white, size: 18),
+                    backgroundColor: warmGold,
+                    child: Icon(Icons.person, color: primaryBlack, size: 18),
                   ),
                   const SizedBox(width: 9),
                   Expanded(
@@ -1638,7 +1874,7 @@ class _AnswerCard extends StatelessWidget {
                     child: Text(
                       answer.answerType,
                       style: const TextStyle(
-                        color: primaryBlack,
+                        color: warmBeige,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1656,9 +1892,9 @@ class _AnswerCard extends StatelessWidget {
                     onPressed: onHelpful,
                     style: TextButton.styleFrom(
                       foregroundColor:
-                          answer.isHelpful ? primaryBlack : Colors.black54,
+                          answer.isHelpful ? primaryBlack : muted,
                       backgroundColor: answer.isHelpful
-                          ? warmGold.withValues(alpha: .25)
+                          ? warmGold
                           : null,
                     ),
                     icon: Icon(
@@ -1690,11 +1926,11 @@ class _AnswerCard extends StatelessWidget {
                           Icon(
                             Icons.flag_outlined,
                             size: 18,
-                            color: Colors.black54,
+                            color: muted,
                           ),
                           SizedBox(width: 5),
                           Text('إبلاغ',
-                              style: TextStyle(color: Colors.black54)),
+                              style: TextStyle(color: muted)),
                         ],
                       ),
                     ),
@@ -1737,11 +1973,11 @@ class _FieldLabel extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 13,
-            backgroundColor: primaryBlack,
+            backgroundColor: warmGold,
             child: Text(
               number,
               style: const TextStyle(
-                color: Colors.white,
+                color: primaryBlack,
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
               ),
@@ -1774,7 +2010,7 @@ class _SubmissionDialog extends StatelessWidget {
         title: const Text(
           'وصلنا سؤالك',
           textAlign: TextAlign.center,
-          style: TextStyle(fontWeight: FontWeight.w800, color: primaryBlack),
+          style: TextStyle(fontWeight: FontWeight.w800, color: cream),
         ),
         content: const Text(
           'تم إرسال سؤالك للمراجعة، ويمكنك متابعة حالته من أسئلتي.',
@@ -1801,7 +2037,7 @@ class _LoadingFeed extends StatelessWidget {
               height: 155,
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: darkSurface,
                 border: Border.all(color: border),
                 borderRadius: BorderRadius.circular(18),
               ),
@@ -1811,7 +2047,7 @@ class _LoadingFeed extends StatelessWidget {
                   height: 26,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: primaryBlack,
+                    color: warmGold,
                   ),
                 ),
               ),

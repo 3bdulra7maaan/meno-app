@@ -24,6 +24,9 @@ void main() {
     expect(dashboard, contains('data-view="answers"'));
     expect(dashboard, contains('banner-image-file'));
     expect(dashboard, contains('banner-upload-progress'));
+    expect(dashboard, contains('banner-dropzone'));
+    expect(dashboard, contains('إضافة بنر جديد'));
+    expect(dashboard, contains('النسبة المفضلة 16:9'));
     expect(dashboard, contains('banner-target-type'));
     expect(dashboard, contains('meno-wordmark-on-dark.png'));
     expect(dashboard, contains('[hidden]{display:none!important}'));

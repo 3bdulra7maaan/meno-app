@@ -39,6 +39,7 @@ void main() {
 
     expect(find.byKey(const Key('home-banners')), findsOneWidget);
     expect(find.text('تنبيه من Meno'), findsOneWidget);
+    expect(find.text('اكتشف المزيد'), findsOneWidget);
     final image = tester.widget<Image>(
       find.byKey(const Key('home-banner-image-active')),
     );
@@ -85,7 +86,7 @@ void main() {
       find.byKey(const Key('home-banner-placeholder-broken')),
       findsOneWidget,
     );
-    expect(find.byIcon(Icons.campaign_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.auto_awesome_rounded), findsOneWidget);
     expect(find.text('أفضل طريقة للتحويل من قطر للسودان شنو؟'), findsOneWidget);
   });
 
@@ -160,5 +161,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('banner-detail-screen')), findsOneWidget);
     expect(find.text('تفاصيل الإعلان'), findsOneWidget);
+    expect(find.byKey(const Key('share-banner-action')), findsOneWidget);
   });
 }
