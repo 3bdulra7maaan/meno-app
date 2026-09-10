@@ -454,22 +454,26 @@ class _HomeShellState extends State<HomeShell> {
           textDirection: TextDirection.ltr,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                MenoWordmark(height: 34, onDark: true),
-                SizedBox(height: 2),
-                Text(
-                  'اسأل زول جرّب',
-                  textDirection: TextDirection.rtl,
-                  style: TextStyle(
-                    color: muted,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w400,
+            const Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MenoWordmark(height: 34, onDark: true),
+                  SizedBox(height: 2),
+                  Text(
+                    'اسأل زول جرّب',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textDirection: TextDirection.rtl,
+                    style: TextStyle(
+                      color: muted,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             PopupMenuButton<_MenuAction>(
               key: const Key('profile-menu'),
@@ -1013,6 +1017,8 @@ class _MenoNavItem extends StatelessWidget {
                   child: Text(
                     label,
                     maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       color: primary || selected ? warmGold : muted,
                       fontSize: 10,
@@ -1127,11 +1133,13 @@ class QuestionCard extends StatelessWidget {
                       color: muted,
                     ),
                     const SizedBox(width: 5),
-                    Text(
-                      answerCountLabel(question.answers.length),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: muted, fontSize: 12),
+                    Flexible(
+                      child: Text(
+                        answerCountLabel(question.answers.length),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: muted, fontSize: 12),
+                      ),
                     ),
                   ],
                 ),
@@ -1864,19 +1872,25 @@ class _AnswerCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: secondaryBeige.withValues(alpha: .28),
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                    child: Text(
-                      answer.answerType,
-                      style: const TextStyle(
-                        color: warmBeige,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: secondaryBeige.withValues(alpha: .28),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Text(
+                        answer.answerType,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: warmBeige,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
