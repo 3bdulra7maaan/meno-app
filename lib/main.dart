@@ -593,11 +593,6 @@ class _HomeShellState extends State<HomeShell> {
         },
       );
 
-  Widget _categoryList() => _categoryChips(
-        selectedCategory: category,
-        onSelected: (value) => setState(() => category = value),
-      );
-
   Widget _homeCategories() => Column(
         children: [
           _SectionHeader(
