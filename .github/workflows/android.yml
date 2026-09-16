@@ -23,6 +23,13 @@ jobs:
         run: flutter create --platforms=android --org=com.meno.app .
       - run: flutter pub get
       - run: dart format lib test
+      - uses: actions/upload-artifact@v5
+        with:
+          name: formatted-dart-source
+          path: |
+            lib/main.dart
+            lib/data/supabase_question_repository.dart
+            test/production_stability_test.dart
       - run: flutter analyze
       - run: flutter test
       - name: Validate admin dashboard JavaScript
