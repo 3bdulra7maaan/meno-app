@@ -1077,7 +1077,6 @@ class _SectionHeader extends StatelessWidget {
           ],
         ),
       );
-  }
 }
 
 class _MenoBottomNavigation extends StatelessWidget {
