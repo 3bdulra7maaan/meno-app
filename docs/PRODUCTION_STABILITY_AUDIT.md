@@ -26,7 +26,9 @@ rows to `approved`, and executes under existing RLS. `page_size` is clamped to
 
 The read-only CI Supabase smoke checks this RPC. If it reports `PGRST202`,
 apply the migration and allow PostgREST's schema cache to refresh before
-rerunning CI. Do not bypass this check or ship the new APK first.
+rerunning CI. CI builds and uploads the APK before this read-only live gate so
+the release artifact can be inspected, but the job remains failed and the APK
+must not be distributed until the migration is applied and the gate passes.
 
 ## Security review
 

@@ -27,14 +27,6 @@ jobs:
       - run: flutter test
       - name: Validate admin dashboard JavaScript
         run: node --check admin/app.js
-      - name: Verify Supabase public data flow
-        run: >-
-          flutter test test/supabase_smoke_test.dart
-          --dart-define=SUPABASE_URL="$SUPABASE_URL"
-          --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       - name: Capture final screens with bundled Almarai
         run: >-
           flutter test test/screenshot_test.dart
@@ -55,3 +47,11 @@ jobs:
         with:
           name: meno-final-screenshots
           path: build/screenshots/*.png
+      - name: Verify Supabase public data flow
+        run: >-
+          flutter test test/supabase_smoke_test.dart
+          --dart-define=SUPABASE_URL="$SUPABASE_URL"
+          --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
