@@ -339,10 +339,9 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     questions = widget.repository.approvedQuestionsPage();
     banners = widget.repository.activeBanners();
-    searchResults = widget.repository.searchApprovedQuestionsPage(
-      query: '',
-      category: searchCategory,
-    );
+    // Search is loaded when opened, so an off-screen request cannot fail
+    // without an error-state widget attached to its future.
+    searchResults = Future.value(const QuestionPage(items: []));
     homeScroll.addListener(() => _maybeLoadMore(homeScroll, isSearch: false));
     searchScroll.addListener(() => _maybeLoadMore(searchScroll, isSearch: true));
   }
@@ -670,6 +669,7 @@ class _HomeShellState extends State<HomeShell> {
             openProfileMenu();
           } else {
             setState(() => index = value == 0 ? 0 : (value == 1 ? 1 : 2));
+            if (value == 1) _resetSearchFeed();
             if (value == 3) myQuestionsKey.currentState?.refresh();
           }
         },
