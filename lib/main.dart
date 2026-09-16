@@ -1041,6 +1041,8 @@ IconData _categoryIcon(String category) => switch (category) {
       _ => Icons.grid_view_rounded,
     };
 
+}
+
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.title, this.action, this.onAction});
   final String title;
