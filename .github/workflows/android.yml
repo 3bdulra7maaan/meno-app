@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main, feature/supabase-phase-2, feature/ui-ux-refresh]
+    branches: [main, feature/supabase-phase-2, feature/ui-ux-refresh, feature/meno-v1-2-1-pixel-match]
   workflow_dispatch:
 
 jobs:
@@ -12,15 +12,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-      - name: Generate Android project shell
+      # android/ has only the customized source/resources; Gradle shell files are
+      # not committed yet, so Flutter still has to create them for this build.
+      - name: Generate missing Android project shell
         run: flutter create --platforms=android --org=com.meno.app .
       - run: flutter pub get
-      - run: dart format lib test
+      - run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
       - run: flutter test
       - name: Validate admin dashboard JavaScript
@@ -45,11 +47,11 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: meno-android-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: meno-final-screenshots
           path: build/screenshots/*.png

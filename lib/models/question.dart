@@ -40,7 +40,9 @@ class Question {
     required this.createdAt,
     required this.status,
     List<Answer>? answers,
-  }) : answers = answers ?? [];
+    int? answerCount,
+  })  : answers = answers ?? [],
+        answerCount = answerCount ?? answers?.length ?? 0;
 
   final String id;
   final String title;
@@ -50,4 +52,19 @@ class Question {
   final DateTime createdAt;
   final QuestionStatus status;
   final List<Answer> answers;
+  int answerCount;
+}
+
+class QuestionCursor {
+  const QuestionCursor({required this.createdAt, required this.id});
+
+  final DateTime createdAt;
+  final String id;
+}
+
+class QuestionPage {
+  const QuestionPage({required this.items, this.nextCursor});
+
+  final List<Question> items;
+  final QuestionCursor? nextCursor;
 }

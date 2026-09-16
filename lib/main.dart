@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'banner_detail_screen.dart';
 import 'brand.dart';
+import 'core/config/backend_config.dart' as backend;
 import 'data/analytics_service.dart';
 import 'data/content_safety.dart';
 import 'data/in_memory_question_repository.dart';
@@ -45,36 +47,86 @@ const reportReasons = {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  const rawUrl = String.fromEnvironment('SUPABASE_URL');
-  final url = normalizeSupabaseUrl(rawUrl);
-  const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
-  if (url.isNotEmpty && anonKey.isNotEmpty) {
-    await Supabase.initialize(url: url, publishableKey: anonKey);
-    AnalyticsService.instance.configure(Supabase.instance.client);
-    unawaited(AnalyticsService.instance.track('app_open'));
-  }
-  final repository = url.isNotEmpty && anonKey.isNotEmpty
-      ? SupabaseQuestionRepository(Supabase.instance.client)
-      : InMemoryQuestionRepository();
-  final showOnboarding = !(await isOnboardingCompleted());
-  runApp(
-    MenoApp(
+  try {
+    const rawUrl = String.fromEnvironment('SUPABASE_URL');
+    const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+    const demoMode = bool.fromEnvironment('MENO_DEMO_MODE');
+    final config = backend.resolveBackendConfig(
+      url: rawUrl,
+      publishableKey: anonKey,
+      allowInMemory: demoMode,
+      isRelease: kReleaseMode,
+    );
+    final QuestionRepository repository;
+    if (config == null) {
+      repository = InMemoryQuestionRepository();
+    } else {
+      await Supabase.initialize(
+        url: config.url,
+        publishableKey: config.publishableKey,
+      );
+      AnalyticsService.instance.configure(Supabase.instance.client);
+      unawaited(AnalyticsService.instance.track('app_open'));
+      repository = SupabaseQuestionRepository(Supabase.instance.client);
+    }
+    final showOnboarding = !(await isOnboardingCompleted());
+    runApp(MenoApp(
       repository: repository,
       showOnboarding: showOnboarding,
       showSplash: true,
-    ),
-  );
+    ));
+  } catch (_) {
+    runApp(const MenoStartupError());
+  }
 }
 
-String normalizeSupabaseUrl(String value) {
-  var url = value.trim();
-  while (url.endsWith('/')) {
-    url = url.substring(0, url.length - 1);
-  }
-  if (url.endsWith('/rest/v1')) {
-    url = url.substring(0, url.length - '/rest/v1'.length);
-  }
-  return url;
+String normalizeSupabaseUrl(String value) => backend.normalizeSupabaseUrl(value);
+
+class MenoStartupError extends StatelessWidget {
+  const MenoStartupError({super.key});
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(fontFamily: 'Almarai', brightness: Brightness.dark),
+        home: const Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(
+            key: Key('startup-configuration-error'),
+            backgroundColor: surface,
+            body: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MenoWordmark(height: 44, onDark: true),
+                      SizedBox(height: 24),
+                      Icon(Icons.cloud_off_rounded, color: warmGold, size: 48),
+                      SizedBox(height: 18),
+                      Text(
+                        'تعذر تشغيل Meno الآن',
+                        style: TextStyle(
+                          color: cream,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'في مشكلة بالاتصال بالخدمة. حاول مرة تانية لاحقًا.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: muted, fontSize: 15),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 class MenoApp extends StatelessWidget {
@@ -269,48 +321,149 @@ class _HomeShellState extends State<HomeShell> {
   String searchCategory = 'الكل';
   final searchController = TextEditingController();
   Timer? searchDebounce;
-  late Future<List<Question>> questions;
-  late Future<List<Question>> searchResults;
+  late Future<QuestionPage> questions;
+  late Future<QuestionPage> searchResults;
   late Future<List<HomeBanner>> banners;
+  QuestionPage? homeCache;
+  QuestionPage? searchCache;
+  bool homeLoadingMore = false;
+  bool searchLoadingMore = false;
+  bool homePageError = false;
+  bool searchPageError = false;
+  final homeScroll = ScrollController();
+  final searchScroll = ScrollController();
   final myQuestionsKey = GlobalKey<_MyQuestionsScreenState>();
 
   @override
   void initState() {
     super.initState();
-    questions = widget.repository.approvedQuestions();
+    questions = widget.repository.approvedQuestionsPage();
     banners = widget.repository.activeBanners();
-    searchResults = widget.repository.searchApprovedQuestions(
+    searchResults = widget.repository.searchApprovedQuestionsPage(
       query: '',
       category: searchCategory,
     );
+    homeScroll.addListener(() => _maybeLoadMore(homeScroll, isSearch: false));
+    searchScroll.addListener(() => _maybeLoadMore(searchScroll, isSearch: true));
   }
 
   @override
   void dispose() {
     searchDebounce?.cancel();
     searchController.dispose();
+    homeScroll.dispose();
+    searchScroll.dispose();
     super.dispose();
   }
 
-  void refresh() => setState(() {
-        questions = widget.repository.approvedQuestions();
-        banners = widget.repository.activeBanners();
-        searchResults = widget.repository.searchApprovedQuestions(
+  Future<void> refresh() async {
+    setState(() {
+      homeCache = null;
+      searchCache = null;
+      homePageError = false;
+      searchPageError = false;
+      questions = widget.repository.approvedQuestionsPage(category: category);
+      banners = widget.repository.activeBanners();
+      searchResults = widget.repository.searchApprovedQuestionsPage(
+        query: search,
+        category: searchCategory,
+      );
+    });
+    try {
+      await Future.wait([questions, searchResults]);
+    } catch (_) {
+      // The visible feed renders the retry state; refresh should not throw.
+    }
+  }
+
+  void _resetHomeFeed() => setState(() {
+        homeCache = null;
+        homePageError = false;
+        questions = widget.repository.approvedQuestionsPage(category: category);
+      });
+
+  void _resetSearchFeed() => setState(() {
+        searchCache = null;
+        searchPageError = false;
+        searchResults = widget.repository.searchApprovedQuestionsPage(
           query: search,
           category: searchCategory,
         );
       });
+
+  void _maybeLoadMore(ScrollController controller, {required bool isSearch}) {
+    if (!controller.hasClients || controller.position.extentAfter > 320) return;
+    unawaited(_loadMore(isSearch: isSearch));
+  }
+
+  Future<void> _loadMore({required bool isSearch}) async {
+    final page = isSearch ? searchCache : homeCache;
+    if (page?.nextCursor == null ||
+        (isSearch ? searchLoadingMore : homeLoadingMore)) return;
+    final expected = page!.nextCursor!;
+    final queryAtStart = search;
+    final categoryAtStart = isSearch ? searchCategory : category;
+    setState(() {
+      if (isSearch) {
+        searchLoadingMore = true;
+        searchPageError = false;
+      } else {
+        homeLoadingMore = true;
+        homePageError = false;
+      }
+    });
+    try {
+      final next = isSearch
+          ? await widget.repository.searchApprovedQuestionsPage(
+              query: queryAtStart,
+              category: categoryAtStart,
+              cursor: expected,
+            )
+          : await widget.repository.approvedQuestionsPage(
+              category: categoryAtStart,
+              cursor: expected,
+            );
+      if (!mounted ||
+          !identical(isSearch ? searchCache : homeCache, page)) return;
+      final seen = page.items.map((item) => item.id).toSet();
+      setState(() {
+        final combined = QuestionPage(
+          items: [
+            ...page.items,
+            ...next.items.where((item) => seen.add(item.id)),
+          ],
+          nextCursor: next.nextCursor,
+        );
+        if (isSearch) {
+          searchCache = combined;
+        } else {
+          homeCache = combined;
+        }
+      });
+    } catch (_) {
+      if (mounted) setState(() {
+        if (isSearch) {
+          searchPageError = true;
+        } else {
+          homePageError = true;
+        }
+      });
+    } finally {
+      if (mounted) setState(() {
+        if (isSearch) {
+          searchLoadingMore = false;
+        } else {
+          homeLoadingMore = false;
+        }
+      });
+    }
+  }
 
   void runSearch({bool track = false}) {
     searchDebounce?.cancel();
     searchDebounce = Timer(const Duration(milliseconds: 250), () {
       if (!mounted) return;
-      setState(() {
-        searchResults = widget.repository.searchApprovedQuestions(
-          query: search,
-          category: searchCategory,
-        );
-      });
+      _resetSearchFeed();
       if (track && search.trim().isNotEmpty) {
         unawaited(AnalyticsService.instance.track('search'));
       }
@@ -320,14 +473,9 @@ class _HomeShellState extends State<HomeShell> {
   void clearSearch() {
     searchDebounce?.cancel();
     searchController.clear();
-    setState(() {
-      search = '';
-      searchCategory = 'الكل';
-      searchResults = widget.repository.searchApprovedQuestions(
-        query: '',
-        category: 'الكل',
-      );
-    });
+    search = '';
+    searchCategory = 'الكل';
+    _resetSearchFeed();
   }
 
   Future<void> openAsk() async {
@@ -520,8 +668,9 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   Widget _home() => RefreshIndicator(
-        onRefresh: () async => refresh(),
+        onRefresh: refresh,
         child: ListView(
+          controller: homeScroll,
           padding: const EdgeInsets.only(bottom: 20),
           children: [
             FutureBuilder<List<HomeBanner>>(
@@ -533,7 +682,10 @@ class _HomeShellState extends State<HomeShell> {
             ),
             _homeCategories(),
             const _SectionHeader(title: 'أحدث الأسئلة'),
-            _questionList(onReset: () => setState(() => category = 'الكل')),
+            _questionList(onReset: () {
+              category = 'الكل';
+              _resetHomeFeed();
+            }),
           ],
         ),
       );
@@ -572,14 +724,13 @@ class _HomeShellState extends State<HomeShell> {
             _searchCategoryList(),
             Expanded(
               child: RefreshIndicator(
-                onRefresh: () async => refresh(),
+                onRefresh: refresh,
                 child: SingleChildScrollView(
+                  controller: searchScroll,
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 20),
                   child: _questionList(
-                    source: searchResults,
-                    selectedCategory: 'الكل',
-                    query: '',
+                    isSearch: true,
                     onReset: clearSearch,
                   ),
                 ),
@@ -592,8 +743,9 @@ class _HomeShellState extends State<HomeShell> {
   Widget _searchCategoryList() => _categoryChips(
         selectedCategory: searchCategory,
         onSelected: (value) {
-          setState(() => searchCategory = value);
-          runSearch();
+          searchCategory = value;
+          searchDebounce?.cancel();
+          _resetSearchFeed();
         },
       );
 
@@ -602,7 +754,10 @@ class _HomeShellState extends State<HomeShell> {
           _SectionHeader(
             title: 'الفئات',
             action: 'عرض الكل',
-            onAction: () => setState(() => category = 'الكل'),
+            onAction: () {
+              category = 'الكل';
+              _resetHomeFeed();
+            },
           ),
           SizedBox(
             height: 112,
@@ -618,7 +773,8 @@ class _HomeShellState extends State<HomeShell> {
                   key: Key('home-category-$value'),
                   borderRadius: BorderRadius.circular(17),
                   onTap: () {
-                    setState(() => category = value);
+                    category = value;
+                    _resetHomeFeed();
                     unawaited(
                       AnalyticsService.instance.track(
                         'category_selected',
@@ -713,15 +869,15 @@ class _HomeShellState extends State<HomeShell> {
       );
 
   Widget _questionList({
-    Future<List<Question>>? source,
-    String? selectedCategory,
-    String? query,
+    bool isSearch = false,
     VoidCallback? onReset,
-  }) =>
-      FutureBuilder<List<Question>>(
-        future: source ?? questions,
+  }) {
+    final currentFuture = isSearch ? searchResults : questions;
+    return FutureBuilder<QuestionPage>(
+        future: currentFuture,
         builder: (context, snapshot) {
-          if (snapshot.hasError) {
+          final cached = isSearch ? searchCache : homeCache;
+          if (snapshot.hasError && cached == null) {
             return Padding(
               key: const Key('error-state'),
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 42),
@@ -758,7 +914,7 @@ class _HomeShellState extends State<HomeShell> {
                   ),
                   const SizedBox(height: 14),
                   OutlinedButton.icon(
-                    onPressed: refresh,
+                    onPressed: () => unawaited(refresh()),
                     icon: const Icon(Icons.refresh_rounded),
                     label: const Text('حاول تاني'),
                   ),
@@ -766,21 +922,23 @@ class _HomeShellState extends State<HomeShell> {
               ),
             );
           }
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState != ConnectionState.done &&
+              cached == null) {
             return const _LoadingFeed();
           }
-          final filtered = snapshot.data!.where((q) {
-            final activeCategory = selectedCategory ?? category;
-            final activeQuery = query ?? '';
-            final matchesCategory =
-                activeCategory == 'الكل' || q.category == activeCategory;
-            final term = activeQuery.trim().toLowerCase();
-            return matchesCategory &&
-                (term.isEmpty ||
-                    q.title.toLowerCase().contains(term) ||
-                    q.body.toLowerCase().contains(term));
-          }).toList();
-          if (filtered.isEmpty) {
+          final page = cached ?? snapshot.data;
+          if (page == null) return const _LoadingFeed();
+          if (cached == null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              if (isSearch && identical(searchResults, currentFuture)) {
+                searchCache = page;
+              } else if (!isSearch && identical(questions, currentFuture)) {
+                homeCache = page;
+              }
+            });
+          }
+          if (page.items.isEmpty) {
             return Padding(
               key: const Key('empty-state'),
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 42),
@@ -824,8 +982,8 @@ class _HomeShellState extends State<HomeShell> {
             );
           }
           return Column(
-            children: filtered
-                .map(
+            children: [
+              ...page.items.map(
                   (question) => QuestionCard(
                     question: question,
                     onTap: () {
@@ -848,8 +1006,19 @@ class _HomeShellState extends State<HomeShell> {
                           .then((_) => refresh());
                     },
                   ),
-                )
-                .toList(),
+                ),
+              if (isSearch ? searchLoadingMore : homeLoadingMore)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              if (isSearch ? searchPageError : homePageError)
+                TextButton.icon(
+                  onPressed: () => unawaited(_loadMore(isSearch: isSearch)),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('ما قدرنا نحمّل المزيد. حاول تاني.'),
+                ),
+            ],
           );
         },
       );
@@ -906,6 +1075,7 @@ class _SectionHeader extends StatelessWidget {
           ],
         ),
       );
+  }
 }
 
 class _MenoBottomNavigation extends StatelessWidget {
@@ -1135,7 +1305,7 @@ class QuestionCard extends StatelessWidget {
                     const SizedBox(width: 5),
                     Flexible(
                       child: Text(
-                        answerCountLabel(question.answers.length),
+                        answerCountLabel(question.answerCount),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: muted, fontSize: 12),
@@ -1569,6 +1739,34 @@ class QuestionDetailsScreen extends StatefulWidget {
 
 class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
   final answer = TextEditingController();
+  Question? detailQuestion;
+  bool detailLoading = true;
+  bool detailError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadDetails());
+  }
+
+  Future<void> _loadDetails() async {
+    if (mounted) setState(() {
+      detailLoading = true;
+      detailError = false;
+    });
+    try {
+      final question = await widget.repository.questionDetails(widget.question);
+      if (mounted) setState(() {
+        detailQuestion = question;
+        detailLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() {
+        detailLoading = false;
+        detailError = true;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -1590,8 +1788,13 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
           entityId: widget.question.id,
         ),
       );
-      if (!widget.question.answers.any((item) => item.id == created.id)) {
-        widget.question.answers.add(created);
+      final displayed = detailQuestion ?? widget.question;
+      if (!displayed.answers.any((item) => item.id == created.id)) {
+        displayed.answers.add(created);
+        displayed.answerCount += 1;
+      }
+      if (displayed.answers.length > displayed.answerCount) {
+        displayed.answerCount = displayed.answers.length;
       }
       answer.clear();
       if (mounted) setState(() {});
@@ -1632,7 +1835,9 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final question = detailQuestion ?? widget.question;
+    return Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: const Text('السؤال'),
@@ -1645,7 +1850,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
                 context: context,
                 showDragHandle: false,
                 isScrollControlled: true,
-                builder: (_) => QuestionShareSheet(question: widget.question),
+                builder: (_) => QuestionShareSheet(question: question),
               ),
               icon: const Icon(Icons.ios_share_rounded),
             ),
@@ -1680,7 +1885,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
                             borderRadius: BorderRadius.circular(9),
                           ),
                           child: Text(
-                            widget.question.category,
+                            question.category,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -1694,19 +1899,19 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
                       const SizedBox(width: 8),
                       const Spacer(),
                       Text(
-                        _timeAgo(widget.question.createdAt),
+                        _timeAgo(question.createdAt),
                         style: const TextStyle(color: muted, fontSize: 12),
                       ),
                     ],
                   ),
                   const SizedBox(height: 15),
                   Text(
-                    widget.question.title,
+                    question.title,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.question.body,
+                    question.body,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 16),
@@ -1724,7 +1929,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        widget.question.author,
+                        question.author,
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           color: ink,
@@ -1738,7 +1943,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
               child: Text(
-                answerCountLabel(widget.question.answers.length),
+                answerCountLabel(question.answerCount),
                 style: const TextStyle(
                   fontSize: 19,
                   fontWeight: FontWeight.w800,
@@ -1746,21 +1951,34 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
                 ),
               ),
             ),
-            ...widget.question.answers.map(
+            if (detailLoading)
+              const Padding(
+                padding: EdgeInsets.all(20),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            if (detailError)
+              Center(
+                child: TextButton.icon(
+                  onPressed: _loadDetails,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('ما قدرنا نحمّل الإجابات. حاول تاني.'),
+                ),
+              ),
+            ...question.answers.map(
               (item) => _AnswerCard(
                 answer: item,
                 onReport: (reason) => reportAnswer(item, reason),
                 onHelpful: () async {
                   try {
                     final result = await widget.repository.toggleHelpful(
-                      questionId: widget.question.id,
+                      questionId: question.id,
                       answerId: item.id,
                     );
                     unawaited(
                       AnalyticsService.instance.track(
                         'helpful_vote',
-                        category: widget.question.category,
-                        entityId: widget.question.id,
+                        category: question.category,
+                        entityId: question.id,
                       ),
                     );
                     item.isHelpful = result.isHelpful;
@@ -1829,6 +2047,7 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
           ),
         ),
       );
+  }
 }
 
 class _AnswerCard extends StatelessWidget {
