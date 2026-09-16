@@ -21,14 +21,16 @@ class SupabaseQuestionRepository implements QuestionRepository {
     QuestionCursor? cursor,
     int pageSize = 20,
   }) =>
-      _fetchPage(query: '', category: category, cursor: cursor, pageSize: pageSize);
+      _fetchPage(
+          query: '', category: category, cursor: cursor, pageSize: pageSize);
 
   @override
   Future<List<Question>> searchApprovedQuestions({
     required String query,
     required String category,
   }) async =>
-      (await searchApprovedQuestionsPage(query: query, category: category)).items;
+      (await searchApprovedQuestionsPage(query: query, category: category))
+          .items;
 
   @override
   Future<QuestionPage> searchApprovedQuestionsPage({
@@ -76,7 +78,8 @@ class SupabaseQuestionRepository implements QuestionRepository {
   Future<Question> questionDetails(Question summary) async {
     final row = await _client
         .from('questions')
-        .select('id,title,body,category,author_name,is_anonymous,status,created_at,'
+        .select(
+            'id,title,body,category,author_name,is_anonymous,status,created_at,'
             'answers(id,author_name,body,created_at,helpful_count,helpful_votes(user_id))')
         .eq('id', summary.id)
         .eq('status', 'approved')
@@ -90,7 +93,8 @@ class SupabaseQuestionRepository implements QuestionRepository {
     if (user == null) return const [];
     final rows = await _client
         .from('questions')
-        .select('id,title,body,category,author_name,is_anonymous,status,created_at,answers(count)')
+        .select(
+            'id,title,body,category,author_name,is_anonymous,status,created_at,answers(count)')
         .eq('user_id', user.id)
         .order('created_at', ascending: false);
     return rows.map(_questionFromMap).toList();
@@ -215,16 +219,16 @@ class SupabaseQuestionRepository implements QuestionRepository {
 
   Question _questionFromMap(Map<String, dynamic> row) {
     final answerRows = (row['answers'] as List?) ?? const [];
-    final detailRows = answerRows.where((answer) =>
-        answer is Map<String, dynamic> && answer.containsKey('id'));
+    final detailRows = answerRows.where(
+        (answer) => answer is Map<String, dynamic> && answer.containsKey('id'));
     final answers = detailRows
         .map((answer) => _answerFromMap(answer as Map<String, dynamic>))
         .toList()
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-    final countFromRelation = answerRows.isNotEmpty &&
-            answerRows.first is Map<String, dynamic>
-        ? (answerRows.first as Map<String, dynamic>)['count']
-        : null;
+    final countFromRelation =
+        answerRows.isNotEmpty && answerRows.first is Map<String, dynamic>
+            ? (answerRows.first as Map<String, dynamic>)['count']
+            : null;
     return Question(
       id: row['id'].toString(),
       title: row['title'] as String,

@@ -72,7 +72,8 @@ void main() {
   testWidgets('configuration failure is a safe Arabic startup screen',
       (tester) async {
     await tester.pumpWidget(const MenoStartupError());
-    expect(find.byKey(const Key('startup-configuration-error')), findsOneWidget);
+    expect(
+        find.byKey(const Key('startup-configuration-error')), findsOneWidget);
     expect(find.text('تعذر تشغيل Meno الآن'), findsOneWidget);
     expect(find.textContaining('SUPABASE_'), findsNothing);
   });
@@ -148,8 +149,8 @@ void main() {
     expect(second.items, isNotEmpty);
     expect(
       first.items.map((item) => item.id).toSet().intersection(
-        second.items.map((item) => item.id).toSet(),
-      ),
+            second.items.map((item) => item.id).toSet(),
+          ),
       isEmpty,
     );
   });
@@ -180,7 +181,8 @@ void main() {
     expect(sql, contains('security invoker'));
     expect(sql, contains("q.status = 'approved'"));
     expect(sql, contains('limit least(greatest'));
-    expect(sql, contains('grant execute on function public.approved_question_page'));
+    expect(sql,
+        contains('grant execute on function public.approved_question_page'));
     expect(sql, isNot(contains('drop table')));
   });
 }
