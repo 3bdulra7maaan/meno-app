@@ -4,7 +4,7 @@ import 'content_safety.dart';
 import 'question_repository.dart';
 import 'question_search.dart';
 
-class InMemoryQuestionRepository implements QuestionRepository {
+class InMemoryQuestionRepository extends QuestionRepository {
   InMemoryQuestionRepository({
     List<HomeBanner> banners = const [],
     Set<String> blockedWords = const {},

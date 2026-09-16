@@ -392,14 +392,18 @@ class _HomeShellState extends State<HomeShell> {
       });
 
   void _maybeLoadMore(ScrollController controller, {required bool isSearch}) {
-    if (!controller.hasClients || controller.position.extentAfter > 320) return;
+    if (!controller.hasClients || controller.position.extentAfter > 320) {
+      return;
+    }
     unawaited(_loadMore(isSearch: isSearch));
   }
 
   Future<void> _loadMore({required bool isSearch}) async {
     final page = isSearch ? searchCache : homeCache;
     if (page?.nextCursor == null ||
-        (isSearch ? searchLoadingMore : homeLoadingMore)) return;
+        (isSearch ? searchLoadingMore : homeLoadingMore)) {
+      return;
+    }
     final expected = page!.nextCursor!;
     final queryAtStart = search;
     final categoryAtStart = isSearch ? searchCategory : category;
@@ -424,7 +428,9 @@ class _HomeShellState extends State<HomeShell> {
               cursor: expected,
             );
       if (!mounted ||
-          !identical(isSearch ? searchCache : homeCache, page)) return;
+          !identical(isSearch ? searchCache : homeCache, page)) {
+        return;
+      }
       final seen = page.items.map((item) => item.id).toSet();
       setState(() {
         final combined = QuestionPage(
@@ -441,21 +447,25 @@ class _HomeShellState extends State<HomeShell> {
         }
       });
     } catch (_) {
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         if (isSearch) {
           searchPageError = true;
         } else {
           homePageError = true;
         }
-      });
+        });
+      }
     } finally {
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         if (isSearch) {
           searchLoadingMore = false;
         } else {
           homeLoadingMore = false;
         }
-      });
+        });
+      }
     }
   }
 
@@ -1751,21 +1761,27 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
   }
 
   Future<void> _loadDetails() async {
-    if (mounted) setState(() {
+    if (mounted) {
+      setState(() {
       detailLoading = true;
       detailError = false;
-    });
+      });
+    }
     try {
       final question = await widget.repository.questionDetails(widget.question);
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         detailQuestion = question;
         detailLoading = false;
-      });
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         detailLoading = false;
         detailError = true;
-      });
+        });
+      }
     }
   }
 

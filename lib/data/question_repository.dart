@@ -22,6 +22,7 @@ abstract class QuestionRepository {
   }) async =>
       _localPage(
         await searchApprovedQuestions(query: query, category: category),
+        category: category,
         cursor: cursor,
         pageSize: pageSize,
       );
