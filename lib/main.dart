@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'banner_detail_screen.dart';
 import 'brand.dart';
+import 'core/config/backend_config.dart' as backend;
 import 'data/analytics_service.dart';
 import 'data/content_safety.dart';
 import 'data/in_memory_question_repository.dart';
@@ -45,36 +47,87 @@ const reportReasons = {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  const rawUrl = String.fromEnvironment('SUPABASE_URL');
-  final url = normalizeSupabaseUrl(rawUrl);
-  const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
-  if (url.isNotEmpty && anonKey.isNotEmpty) {
-    await Supabase.initialize(url: url, publishableKey: anonKey);
-    AnalyticsService.instance.configure(Supabase.instance.client);
-    unawaited(AnalyticsService.instance.track('app_open'));
-  }
-  final repository = url.isNotEmpty && anonKey.isNotEmpty
-      ? SupabaseQuestionRepository(Supabase.instance.client)
-      : InMemoryQuestionRepository();
-  final showOnboarding = !(await isOnboardingCompleted());
-  runApp(
-    MenoApp(
+  try {
+    const rawUrl = String.fromEnvironment('SUPABASE_URL');
+    const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+    const demoMode = bool.fromEnvironment('MENO_DEMO_MODE');
+    final config = backend.resolveBackendConfig(
+      url: rawUrl,
+      publishableKey: anonKey,
+      allowInMemory: demoMode,
+      isRelease: kReleaseMode,
+    );
+    final QuestionRepository repository;
+    if (config == null) {
+      repository = InMemoryQuestionRepository();
+    } else {
+      await Supabase.initialize(
+        url: config.url,
+        publishableKey: config.publishableKey,
+      );
+      AnalyticsService.instance.configure(Supabase.instance.client);
+      unawaited(AnalyticsService.instance.track('app_open'));
+      repository = SupabaseQuestionRepository(Supabase.instance.client);
+    }
+    final showOnboarding = !(await isOnboardingCompleted());
+    runApp(MenoApp(
       repository: repository,
       showOnboarding: showOnboarding,
       showSplash: true,
-    ),
-  );
+    ));
+  } catch (_) {
+    runApp(const MenoStartupError());
+  }
 }
 
-String normalizeSupabaseUrl(String value) {
-  var url = value.trim();
-  while (url.endsWith('/')) {
-    url = url.substring(0, url.length - 1);
-  }
-  if (url.endsWith('/rest/v1')) {
-    url = url.substring(0, url.length - '/rest/v1'.length);
-  }
-  return url;
+String normalizeSupabaseUrl(String value) =>
+    backend.normalizeSupabaseUrl(value);
+
+class MenoStartupError extends StatelessWidget {
+  const MenoStartupError({super.key});
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(fontFamily: 'Almarai', brightness: Brightness.dark),
+        home: const Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(
+            key: Key('startup-configuration-error'),
+            backgroundColor: surface,
+            body: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MenoWordmark(height: 44, onDark: true),
+                      SizedBox(height: 24),
+                      Icon(Icons.cloud_off_rounded, color: warmGold, size: 48),
+                      SizedBox(height: 18),
+                      Text(
+                        'تعذر تشغيل Meno الآن',
+                        style: TextStyle(
+                          color: cream,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'في مشكلة بالاتصال بالخدمة. حاول مرة تانية لاحقًا.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: muted, fontSize: 15),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 class MenoApp extends StatelessWidget {
@@ -95,11 +148,14 @@ class MenoApp extends StatelessWidget {
         title: 'Meno',
         theme: ThemeData(
           fontFamily: 'Almarai',
+          brightness: Brightness.dark,
           colorScheme: ColorScheme.fromSeed(
+            brightness: Brightness.dark,
             seedColor: primaryBlack,
-            primary: primaryBlack,
+            primary: warmGold,
             secondary: warmGold,
-            surface: Colors.white,
+            surface: darkSurface,
+            onSurface: cream,
           ),
           scaffoldBackgroundColor: surface,
           useMaterial3: true,
@@ -108,20 +164,20 @@ class MenoApp extends StatelessWidget {
               fontSize: 24,
               height: 1.4,
               fontWeight: FontWeight.w800,
-              color: ink,
+              color: cream,
             ),
             titleLarge: TextStyle(
               fontSize: 19,
               height: 1.5,
               fontWeight: FontWeight.w800,
-              color: ink,
+              color: cream,
             ),
-            bodyLarge: TextStyle(fontSize: 16, height: 1.7, color: ink),
+            bodyLarge: TextStyle(fontSize: 16, height: 1.7, color: cream),
             bodyMedium: TextStyle(fontSize: 14, height: 1.6, color: muted),
           ),
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: darkSurface,
             counterStyle: const TextStyle(
               color: muted,
               fontSize: 11,
@@ -142,11 +198,37 @@ class MenoApp extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: darkGold, width: 1.5),
+              borderSide: const BorderSide(color: warmGold, width: 1.5),
+            ),
+          ),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: surface,
+            foregroundColor: cream,
+            elevation: 0,
+            centerTitle: true,
+          ),
+          cardTheme: CardThemeData(
+            color: darkSurface,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              side: const BorderSide(color: border),
+              borderRadius: BorderRadius.circular(18),
+            ),
+          ),
+          dialogTheme: DialogThemeData(
+            backgroundColor: raisedSurface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
+          ),
+          popupMenuTheme: PopupMenuThemeData(
+            color: raisedSurface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
           snackBarTheme: const SnackBarThemeData(
-            backgroundColor: primaryBlack,
+            backgroundColor: raisedSurface,
             behavior: SnackBarBehavior.floating,
           ),
         ),
@@ -206,15 +288,7 @@ class MenoSplashScreen extends StatelessWidget {
               children: [
                 MenoMark(size: 112),
                 SizedBox(height: 22),
-                Text(
-                  'Meno',
-                  textDirection: TextDirection.ltr,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 38,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+                MenoWordmark(height: 48, onDark: true),
                 SizedBox(height: 6),
                 Text(
                   'اسأل زول جرّب',
@@ -248,48 +322,158 @@ class _HomeShellState extends State<HomeShell> {
   String searchCategory = 'الكل';
   final searchController = TextEditingController();
   Timer? searchDebounce;
-  late Future<List<Question>> questions;
-  late Future<List<Question>> searchResults;
+  late Future<QuestionPage> questions;
+  late Future<QuestionPage> searchResults;
   late Future<List<HomeBanner>> banners;
+  QuestionPage? homeCache;
+  QuestionPage? searchCache;
+  bool homeLoadingMore = false;
+  bool searchLoadingMore = false;
+  bool homePageError = false;
+  bool searchPageError = false;
+  final homeScroll = ScrollController();
+  final searchScroll = ScrollController();
   final myQuestionsKey = GlobalKey<_MyQuestionsScreenState>();
 
   @override
   void initState() {
     super.initState();
-    questions = widget.repository.approvedQuestions();
+    questions = widget.repository.approvedQuestionsPage();
     banners = widget.repository.activeBanners();
-    searchResults = widget.repository.searchApprovedQuestions(
-      query: '',
-      category: searchCategory,
-    );
+    // Search is loaded when opened, so an off-screen request cannot fail
+    // without an error-state widget attached to its future.
+    searchResults = Future.value(const QuestionPage(items: []));
+    homeScroll.addListener(() => _maybeLoadMore(homeScroll, isSearch: false));
+    searchScroll
+        .addListener(() => _maybeLoadMore(searchScroll, isSearch: true));
   }
 
   @override
   void dispose() {
     searchDebounce?.cancel();
     searchController.dispose();
+    homeScroll.dispose();
+    searchScroll.dispose();
     super.dispose();
   }
 
-  void refresh() => setState(() {
-        questions = widget.repository.approvedQuestions();
-        banners = widget.repository.activeBanners();
-        searchResults = widget.repository.searchApprovedQuestions(
+  Future<void> refresh() async {
+    setState(() {
+      homeCache = null;
+      searchCache = null;
+      homePageError = false;
+      searchPageError = false;
+      questions = widget.repository.approvedQuestionsPage(category: category);
+      banners = widget.repository.activeBanners();
+      searchResults = widget.repository.searchApprovedQuestionsPage(
+        query: search,
+        category: searchCategory,
+      );
+    });
+    try {
+      await Future.wait([questions, searchResults]);
+    } catch (_) {
+      // The visible feed renders the retry state; refresh should not throw.
+    }
+  }
+
+  void _resetHomeFeed() => setState(() {
+        homeCache = null;
+        homePageError = false;
+        questions = widget.repository.approvedQuestionsPage(category: category);
+      });
+
+  void _resetSearchFeed() => setState(() {
+        searchCache = null;
+        searchPageError = false;
+        searchResults = widget.repository.searchApprovedQuestionsPage(
           query: search,
           category: searchCategory,
         );
       });
+
+  void _maybeLoadMore(ScrollController controller, {required bool isSearch}) {
+    if (!controller.hasClients || controller.position.extentAfter > 320) {
+      return;
+    }
+    unawaited(_loadMore(isSearch: isSearch));
+  }
+
+  Future<void> _loadMore({required bool isSearch}) async {
+    final page = isSearch ? searchCache : homeCache;
+    if (page?.nextCursor == null ||
+        (isSearch ? searchLoadingMore : homeLoadingMore)) {
+      return;
+    }
+    final expected = page!.nextCursor!;
+    final queryAtStart = search;
+    final categoryAtStart = isSearch ? searchCategory : category;
+    setState(() {
+      if (isSearch) {
+        searchLoadingMore = true;
+        searchPageError = false;
+      } else {
+        homeLoadingMore = true;
+        homePageError = false;
+      }
+    });
+    try {
+      final next = isSearch
+          ? await widget.repository.searchApprovedQuestionsPage(
+              query: queryAtStart,
+              category: categoryAtStart,
+              cursor: expected,
+            )
+          : await widget.repository.approvedQuestionsPage(
+              category: categoryAtStart,
+              cursor: expected,
+            );
+      if (!mounted || !identical(isSearch ? searchCache : homeCache, page)) {
+        return;
+      }
+      final seen = page.items.map((item) => item.id).toSet();
+      setState(() {
+        final combined = QuestionPage(
+          items: [
+            ...page.items,
+            ...next.items.where((item) => seen.add(item.id)),
+          ],
+          nextCursor: next.nextCursor,
+        );
+        if (isSearch) {
+          searchCache = combined;
+        } else {
+          homeCache = combined;
+        }
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          if (isSearch) {
+            searchPageError = true;
+          } else {
+            homePageError = true;
+          }
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          if (isSearch) {
+            searchLoadingMore = false;
+          } else {
+            homeLoadingMore = false;
+          }
+        });
+      }
+    }
+  }
 
   void runSearch({bool track = false}) {
     searchDebounce?.cancel();
     searchDebounce = Timer(const Duration(milliseconds: 250), () {
       if (!mounted) return;
-      setState(() {
-        searchResults = widget.repository.searchApprovedQuestions(
-          query: search,
-          category: searchCategory,
-        );
-      });
+      _resetSearchFeed();
       if (track && search.trim().isNotEmpty) {
         unawaited(AnalyticsService.instance.track('search'));
       }
@@ -299,14 +483,9 @@ class _HomeShellState extends State<HomeShell> {
   void clearSearch() {
     searchDebounce?.cancel();
     searchController.clear();
-    setState(() {
-      search = '';
-      searchCategory = 'الكل';
-      searchResults = widget.repository.searchApprovedQuestions(
-        query: '',
-        category: 'الكل',
-      );
-    });
+    search = '';
+    searchCategory = 'الكل';
+    _resetSearchFeed();
   }
 
   Future<void> openAsk() async {
@@ -371,6 +550,48 @@ class _HomeShellState extends State<HomeShell> {
     }
   }
 
+  Future<void> openProfileMenu() async {
+    final action = await showModalBottomSheet<_MenuAction>(
+      context: context,
+      backgroundColor: raisedSurface,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(
+              leading: CircleAvatar(
+                backgroundColor: warmGold,
+                child: Icon(Icons.person_outline_rounded, color: primaryBlack),
+              ),
+              title: Text(
+                'حسابي',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: Text('تصفح عام بهوية مجهولة محفوظة على جهازك'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline_rounded),
+              title: const Text('عن Meno'),
+              onTap: () => Navigator.pop(context, _MenuAction.about),
+            ),
+            ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: const Text('سياسة الخصوصية'),
+              onTap: () => Navigator.pop(context, _MenuAction.privacy),
+            ),
+            ListTile(
+              leading: const Icon(Icons.mail_outline_rounded),
+              title: const Text('تواصل معنا'),
+              onTap: () => Navigator.pop(context, _MenuAction.contact),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (action != null && mounted) await handleMenu(action);
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = [
@@ -384,21 +605,41 @@ class _HomeShellState extends State<HomeShell> {
     ];
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        toolbarHeight: 62,
-        titleSpacing: 18,
+        backgroundColor: surface,
+        toolbarHeight: 72,
+        titleSpacing: 16,
         title: Row(
           textDirection: TextDirection.ltr,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const MenoWordmark(height: 34),
+            const Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MenoWordmark(height: 34, onDark: true),
+                  SizedBox(height: 2),
+                  Text(
+                    'اسأل زول جرّب',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textDirection: TextDirection.rtl,
+                    style: TextStyle(
+                      color: muted,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             PopupMenuButton<_MenuAction>(
               key: const Key('profile-menu'),
               tooltip: 'القائمة',
               icon: const CircleAvatar(
-                radius: 18,
-                backgroundColor: Color(0xFFF2EDE5),
-                child: Icon(Icons.person_outline_rounded, color: primaryBlack),
+                radius: 19,
+                backgroundColor: cream,
+                child: Icon(Icons.person_outline_rounded, color: darkGold),
               ),
               onSelected: handleMenu,
               itemBuilder: (_) => const [
@@ -420,112 +661,29 @@ class _HomeShellState extends State<HomeShell> {
         ),
       ),
       body: SafeArea(child: pages[index]),
-      bottomNavigationBar: NavigationBar(
-        height: 70,
-        backgroundColor: Colors.white,
+      bottomNavigationBar: _MenoBottomNavigation(
         selectedIndex: index == 0 ? 0 : (index == 1 ? 1 : 3),
-        indicatorColor: warmGold.withValues(alpha: .45),
-        onDestinationSelected: (value) {
+        onSelected: (value) {
           if (value == 2) {
             openAsk();
+          } else if (value == 4) {
+            openProfileMenu();
           } else {
             setState(() => index = value == 0 ? 0 : (value == 1 ? 1 : 2));
+            if (value == 1) _resetSearchFeed();
             if (value == 3) myQuestionsKey.currentState?.refresh();
           }
         },
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'الرئيسية',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search),
-            label: 'البحث',
-          ),
-          NavigationDestination(
-            icon: Container(
-              width: 42,
-              height: 34,
-              decoration: BoxDecoration(
-                color: warmGold,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.add_rounded, color: primaryBlack),
-            ),
-            label: 'اسأل',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.list_alt_outlined),
-            selectedIcon: Icon(Icons.list_alt_rounded),
-            label: 'أسئلتي',
-          ),
-        ],
       ),
     );
   }
 
   Widget _home() => RefreshIndicator(
-        onRefresh: () async => refresh(),
+        onRefresh: refresh,
         child: ListView(
+          controller: homeScroll,
           padding: const EdgeInsets.only(bottom: 20),
           children: [
-            Container(
-              decoration: const BoxDecoration(
-                color: primaryBlack,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(26),
-                  bottomRight: Radius.circular(26),
-                ),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'اسأل زول جرّب',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'إجابات قريبة منك، من ناس عندهم تجربة حقيقية.',
-                    style: TextStyle(color: Color(0xFFF2E9DA), fontSize: 15),
-                  ),
-                  const SizedBox(height: 10),
-                  InkWell(
-                    onTap: () => setState(() => index = 1),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.search_rounded, color: primaryBlack),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'فتّش في تجارب الناس...',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: muted, fontSize: 15),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
             FutureBuilder<List<HomeBanner>>(
               future: banners,
               builder: (context, snapshot) => HomeBannerCarousel(
@@ -533,19 +691,12 @@ class _HomeShellState extends State<HomeShell> {
                 onBannerTap: openBanner,
               ),
             ),
-            _categoryList(),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(18, 6, 18, 2),
-              child: Text(
-                'أسئلة من المجتمع',
-                style: TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w800,
-                  color: ink,
-                ),
-              ),
-            ),
-            _questionList(onReset: () => setState(() => category = 'الكل')),
+            _homeCategories(),
+            const _SectionHeader(title: 'أحدث الأسئلة'),
+            _questionList(onReset: () {
+              category = 'الكل';
+              _resetHomeFeed();
+            }),
           ],
         ),
       );
@@ -584,14 +735,13 @@ class _HomeShellState extends State<HomeShell> {
             _searchCategoryList(),
             Expanded(
               child: RefreshIndicator(
-                onRefresh: () async => refresh(),
+                onRefresh: refresh,
                 child: SingleChildScrollView(
+                  controller: searchScroll,
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 20),
                   child: _questionList(
-                    source: searchResults,
-                    selectedCategory: 'الكل',
-                    query: '',
+                    isSearch: true,
                     onReset: clearSearch,
                   ),
                 ),
@@ -604,14 +754,88 @@ class _HomeShellState extends State<HomeShell> {
   Widget _searchCategoryList() => _categoryChips(
         selectedCategory: searchCategory,
         onSelected: (value) {
-          setState(() => searchCategory = value);
-          runSearch();
+          searchCategory = value;
+          searchDebounce?.cancel();
+          _resetSearchFeed();
         },
       );
 
-  Widget _categoryList() => _categoryChips(
-        selectedCategory: category,
-        onSelected: (value) => setState(() => category = value),
+  Widget _homeCategories() => Column(
+        children: [
+          _SectionHeader(
+            title: 'الفئات',
+            action: 'عرض الكل',
+            onAction: () {
+              category = 'الكل';
+              _resetHomeFeed();
+            },
+          ),
+          SizedBox(
+            height: 112,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              scrollDirection: Axis.horizontal,
+              itemCount: categories.length - 1,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (_, index) {
+                final value = categories[index + 1];
+                final selected = category == value;
+                return InkWell(
+                  key: Key('home-category-$value'),
+                  borderRadius: BorderRadius.circular(17),
+                  onTap: () {
+                    category = value;
+                    _resetHomeFeed();
+                    unawaited(
+                      AnalyticsService.instance.track(
+                        'category_selected',
+                        category: value,
+                      ),
+                    );
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    width: 88,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: selected ? raisedSurface : darkSurface,
+                      border: Border.all(
+                        color: selected ? warmGold : border,
+                      ),
+                      borderRadius: BorderRadius.circular(17),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _categoryIcon(value),
+                          color: selected ? warmGold : warmBeige,
+                          size: 29,
+                        ),
+                        const SizedBox(height: 9),
+                        Text(
+                          value,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: selected ? cream : muted,
+                            fontSize: 11,
+                            height: 1.35,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       );
 
   Widget _categoryChips({
@@ -631,11 +855,11 @@ class _HomeShellState extends State<HomeShell> {
               label: Text(categories[i]),
               selected: selected,
               showCheckmark: false,
-              backgroundColor: Colors.white,
+              backgroundColor: darkSurface,
               selectedColor: warmGold,
               side: BorderSide(color: selected ? darkGold : border),
-              labelStyle: const TextStyle(
-                color: primaryBlack,
+              labelStyle: TextStyle(
+                color: selected ? primaryBlack : cream,
                 fontWeight: FontWeight.w700,
               ),
               shape: RoundedRectangleBorder(
@@ -656,145 +880,337 @@ class _HomeShellState extends State<HomeShell> {
       );
 
   Widget _questionList({
-    Future<List<Question>>? source,
-    String? selectedCategory,
-    String? query,
+    bool isSearch = false,
     VoidCallback? onReset,
-  }) =>
-      FutureBuilder<List<Question>>(
-        future: source ?? questions,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Padding(
-              key: const Key('error-state'),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 42),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: warmBeige.withValues(alpha: .52),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.wifi_off_rounded,
-                      size: 34,
-                      color: primaryBlack,
-                    ),
+  }) {
+    final currentFuture = isSearch ? searchResults : questions;
+    return FutureBuilder<QuestionPage>(
+      future: currentFuture,
+      builder: (context, snapshot) {
+        final cached = isSearch ? searchCache : homeCache;
+        if (snapshot.hasError && cached == null) {
+          return Padding(
+            key: const Key('error-state'),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 42),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: raisedSurface,
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'الاتصال ما زبط',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: ink,
-                    ),
+                  child: const Icon(
+                    Icons.wifi_off_rounded,
+                    size: 34,
+                    color: warmGold,
                   ),
-                  const SizedBox(height: 7),
-                  const Text(
-                    'اتأكد من الإنترنت وحاول تاني. أسئلتك وتجاربك ما حتضيع.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: muted, height: 1.6),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'الاتصال ما زبط',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: ink,
                   ),
-                  const SizedBox(height: 14),
-                  OutlinedButton.icon(
-                    onPressed: refresh,
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('حاول تاني'),
-                  ),
-                ],
-              ),
-            );
-          }
-          if (!snapshot.hasData) {
-            return const _LoadingFeed();
-          }
-          final filtered = snapshot.data!.where((q) {
-            final activeCategory = selectedCategory ?? category;
-            final activeQuery = query ?? '';
-            final matchesCategory =
-                activeCategory == 'الكل' || q.category == activeCategory;
-            final term = activeQuery.trim().toLowerCase();
-            return matchesCategory &&
-                (term.isEmpty ||
-                    q.title.toLowerCase().contains(term) ||
-                    q.body.toLowerCase().contains(term));
-          }).toList();
-          if (filtered.isEmpty) {
-            return Padding(
-              key: const Key('empty-state'),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 42),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF2EDE5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.search_off_rounded,
-                      size: 34,
-                      color: primaryBlack,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'ما لقينا نتيجة مطابقة',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: ink,
-                    ),
-                  ),
-                  const SizedBox(height: 7),
-                  const Text(
-                    'جرّب كلمة أقصر أو اختار «الكل».',
-                    style: TextStyle(color: muted),
-                  ),
-                  const SizedBox(height: 14),
-                  FilledButton(
-                    onPressed: onReset ?? clearSearch,
-                    child: const Text('امسح البحث'),
-                  ),
-                ],
-              ),
-            );
-          }
-          return Column(
-            children: filtered
-                .map(
-                  (question) => QuestionCard(
-                    question: question,
-                    onTap: () {
-                      unawaited(
-                        AnalyticsService.instance.track(
-                          'question_view',
-                          category: question.category,
-                          entityId: question.id,
-                        ),
-                      );
-                      Navigator.of(context)
-                          .push(
-                            MaterialPageRoute(
-                              builder: (_) => QuestionDetailsScreen(
-                                question: question,
-                                repository: widget.repository,
-                              ),
-                            ),
-                          )
-                          .then((_) => refresh());
-                    },
-                  ),
-                )
-                .toList(),
+                ),
+                const SizedBox(height: 7),
+                const Text(
+                  'اتأكد من الإنترنت وحاول تاني. أسئلتك وتجاربك ما حتضيع.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: muted, height: 1.6),
+                ),
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  onPressed: () => unawaited(refresh()),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('حاول تاني'),
+                ),
+              ],
+            ),
           );
-        },
+        }
+        if (snapshot.connectionState != ConnectionState.done &&
+            cached == null) {
+          return const _LoadingFeed();
+        }
+        final page = cached ?? snapshot.data;
+        if (page == null) return const _LoadingFeed();
+        if (cached == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            if (isSearch && identical(searchResults, currentFuture)) {
+              searchCache = page;
+            } else if (!isSearch && identical(questions, currentFuture)) {
+              homeCache = page;
+            }
+          });
+        }
+        if (page.items.isEmpty) {
+          return Padding(
+            key: const Key('empty-state'),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 42),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    color: raisedSurface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.search_off_rounded,
+                    size: 34,
+                    color: warmGold,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'ما لقينا نتيجة مطابقة',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: ink,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                const Text(
+                  'جرّب كلمة أقصر أو اختار «الكل».',
+                  style: TextStyle(color: muted),
+                ),
+                const SizedBox(height: 14),
+                FilledButton(
+                  onPressed: onReset ?? clearSearch,
+                  child: const Text('امسح البحث'),
+                ),
+              ],
+            ),
+          );
+        }
+        return Column(
+          children: [
+            ...page.items.map(
+              (question) => QuestionCard(
+                question: question,
+                onTap: () {
+                  unawaited(
+                    AnalyticsService.instance.track(
+                      'question_view',
+                      category: question.category,
+                      entityId: question.id,
+                    ),
+                  );
+                  Navigator.of(context)
+                      .push(
+                        MaterialPageRoute(
+                          builder: (_) => QuestionDetailsScreen(
+                            question: question,
+                            repository: widget.repository,
+                          ),
+                        ),
+                      )
+                      .then((_) => refresh());
+                },
+              ),
+            ),
+            if (isSearch ? searchLoadingMore : homeLoadingMore)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            if (isSearch ? searchPageError : homePageError)
+              TextButton.icon(
+                onPressed: () => unawaited(_loadMore(isSearch: isSearch)),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('ما قدرنا نحمّل المزيد. حاول تاني.'),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  IconData _categoryIcon(String category) => switch (category) {
+        'الصحة' => Icons.favorite_rounded,
+        'السفر والتأشيرات' => Icons.flight_takeoff_rounded,
+        'السيارات' => Icons.directions_car_filled_rounded,
+        'السكن' => Icons.home_work_rounded,
+        'التعليم' => Icons.school_rounded,
+        'البنوك والتحويلات' => Icons.account_balance_rounded,
+        'الاتصالات والإنترنت' => Icons.wifi_rounded,
+        'الوظائف' => Icons.work_rounded,
+        'التسوق والأسعار' => Icons.shopping_bag_rounded,
+        'المغتربين' => Icons.public_rounded,
+        'الشحن' => Icons.local_shipping_rounded,
+        'الخدمات' => Icons.handyman_rounded,
+        'المعاملات الحكومية' => Icons.assignment_rounded,
+        _ => Icons.grid_view_rounded,
+      };
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.action, this.onAction});
+  final String title;
+  final String? action;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: cream,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            if (action != null)
+              TextButton(
+                onPressed: onAction,
+                child: Text(
+                  action!,
+                  style: const TextStyle(color: muted, fontSize: 12),
+                ),
+              ),
+          ],
+        ),
+      );
+}
+
+class _MenoBottomNavigation extends StatelessWidget {
+  const _MenoBottomNavigation({
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: surface,
+        child: SafeArea(
+          top: false,
+          child: Container(
+            height: 72,
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: border)),
+            ),
+            child: Row(
+              children: [
+                _MenoNavItem(
+                  label: 'الرئيسية',
+                  icon: Icons.home_rounded,
+                  selected: selectedIndex == 0,
+                  onTap: () => onSelected(0),
+                ),
+                _MenoNavItem(
+                  label: 'البحث',
+                  icon: Icons.search_rounded,
+                  selected: selectedIndex == 1,
+                  onTap: () => onSelected(1),
+                ),
+                _MenoNavItem(
+                  key: const Key('bottom-ask-action'),
+                  label: 'اسأل',
+                  icon: Icons.add_rounded,
+                  primary: true,
+                  selected: false,
+                  onTap: () => onSelected(2),
+                ),
+                _MenoNavItem(
+                  label: 'أسئلتي',
+                  icon: Icons.assignment_outlined,
+                  selected: selectedIndex == 3,
+                  onTap: () => onSelected(3),
+                ),
+                _MenoNavItem(
+                  label: 'حسابي',
+                  icon: Icons.person_outline_rounded,
+                  selected: false,
+                  onTap: () => onSelected(4),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class _MenoNavItem extends StatelessWidget {
+  const _MenoNavItem({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+    this.primary = false,
+  });
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final bool primary;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            height: 72,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: primary ? 48 : 34,
+                  height: primary ? 48 : 32,
+                  transform:
+                      primary ? Matrix4.translationValues(0, -10, 0) : null,
+                  decoration: primary
+                      ? BoxDecoration(
+                          color: warmGold,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: surface, width: 5),
+                        )
+                      : null,
+                  child: Icon(
+                    icon,
+                    color:
+                        primary ? primaryBlack : (selected ? warmGold : muted),
+                    size: primary ? 29 : 23,
+                  ),
+                ),
+                Transform.translate(
+                  offset: Offset(0, primary ? -8 : 0),
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: primary || selected ? warmGold : muted,
+                      fontSize: 10,
+                      fontWeight: selected || primary
+                          ? FontWeight.w800
+                          : FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
 }
 
@@ -807,7 +1223,7 @@ class QuestionCard extends StatelessWidget {
   Widget build(BuildContext context) => Card(
         margin: const EdgeInsets.fromLTRB(14, 5, 14, 5),
         elevation: 0,
-        color: Colors.white,
+        color: darkSurface,
         shape: RoundedRectangleBorder(
           side: const BorderSide(color: border),
           borderRadius: BorderRadius.circular(18),
@@ -829,7 +1245,7 @@ class QuestionCard extends StatelessWidget {
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF5EBDD),
+                          color: warmGold.withValues(alpha: .14),
                           borderRadius: BorderRadius.circular(9),
                         ),
                         child: Text(
@@ -837,7 +1253,7 @@ class QuestionCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: primaryBlack,
+                            color: warmGold,
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
                           ),
@@ -848,8 +1264,7 @@ class QuestionCard extends StatelessWidget {
                     const Spacer(),
                     Text(
                       _timeAgo(question.createdAt),
-                      style:
-                          const TextStyle(color: Colors.black45, fontSize: 12),
+                      style: const TextStyle(color: muted, fontSize: 12),
                     ),
                   ],
                 ),
@@ -861,7 +1276,7 @@ class QuestionCard extends StatelessWidget {
                   question.body,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.black54, height: 1.5),
+                  style: const TextStyle(color: muted, height: 1.5),
                 ),
                 const SizedBox(height: 9),
                 const Divider(height: 1, color: border),
@@ -870,11 +1285,11 @@ class QuestionCard extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 14,
-                      backgroundColor: const Color(0xFFF2EDE5),
+                      backgroundColor: raisedSurface,
                       child: Text(
                         question.author.characters.first,
                         style: const TextStyle(
-                          color: primaryBlack,
+                          color: warmGold,
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                         ),
@@ -894,12 +1309,16 @@ class QuestionCard extends StatelessWidget {
                     const Icon(
                       Icons.chat_bubble_outline,
                       size: 18,
-                      color: Colors.black54,
+                      color: muted,
                     ),
                     const SizedBox(width: 5),
-                    Text(
-                      answerCountLabel(question.answers.length),
-                      style: const TextStyle(color: Colors.black54),
+                    Flexible(
+                      child: Text(
+                        answerCountLabel(question.answerCount),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: muted, fontSize: 12),
+                      ),
                     ),
                   ],
                 ),
@@ -1027,7 +1446,7 @@ class _MyQuestionsScreenState extends State<MyQuestionsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('أسئلتي'),
-        backgroundColor: Colors.white,
+        backgroundColor: surface,
       ),
       body: content,
     );
@@ -1042,7 +1461,7 @@ class _MyQuestionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
         elevation: 0,
-        color: Colors.white,
+        color: darkSurface,
         shape: RoundedRectangleBorder(
           side: const BorderSide(color: border),
           borderRadius: BorderRadius.circular(18),
@@ -1064,7 +1483,7 @@ class _MyQuestionCard extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5EBDD),
+                        color: warmGold.withValues(alpha: .14),
                         borderRadius: BorderRadius.circular(9),
                       ),
                       child: Text(
@@ -1170,7 +1589,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
             'سؤال جديد',
             style: TextStyle(fontWeight: FontWeight.w800),
           ),
-          backgroundColor: Colors.white,
+          backgroundColor: surface,
         ),
         body: Form(
           key: formKey,
@@ -1181,13 +1600,14 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: warmBeige.withValues(alpha: .28),
+                  color: raisedSurface,
+                  border: Border.all(color: border),
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.lightbulb_outline_rounded, color: primaryBlack),
+                    Icon(Icons.lightbulb_outline_rounded, color: warmGold),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -1197,7 +1617,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
                             'خلي سؤالك واضح ومحدد',
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
-                              color: primaryBlack,
+                              color: cream,
                               fontSize: 16,
                             ),
                           ),
@@ -1205,7 +1625,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
                           Text(
                             'قول للناس شنو جرّبت وشنو بالضبط الداير تعرفو.',
                             style: TextStyle(
-                              color: Color(0xFF67583F),
+                              color: muted,
                               height: 1.55,
                             ),
                           ),
@@ -1261,7 +1681,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
               ),
               const SizedBox(height: 14),
               Material(
-                color: Colors.white,
+                color: darkSurface,
                 shape: RoundedRectangleBorder(
                   side: const BorderSide(color: border),
                   borderRadius: BorderRadius.circular(18),
@@ -1273,7 +1693,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
                   activeThumbColor: darkGold,
                   secondary: const Icon(
                     Icons.visibility_off_outlined,
-                    color: primaryBlack,
+                    color: warmGold,
                   ),
                   title: const Text(
                     'اسأل كمجهول',
@@ -1305,7 +1725,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
               const Text(
                 'كل الأسئلة بتتراجع قبل ما تظهر للناس.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black45, fontSize: 12),
+                style: TextStyle(color: muted, fontSize: 12),
               ),
             ],
           ),
@@ -1328,6 +1748,40 @@ class QuestionDetailsScreen extends StatefulWidget {
 
 class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
   final answer = TextEditingController();
+  Question? detailQuestion;
+  bool detailLoading = true;
+  bool detailError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadDetails());
+  }
+
+  Future<void> _loadDetails() async {
+    if (mounted) {
+      setState(() {
+        detailLoading = true;
+        detailError = false;
+      });
+    }
+    try {
+      final question = await widget.repository.questionDetails(widget.question);
+      if (mounted) {
+        setState(() {
+          detailQuestion = question;
+          detailLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          detailLoading = false;
+          detailError = true;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -1349,8 +1803,13 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
           entityId: widget.question.id,
         ),
       );
-      if (!widget.question.answers.any((item) => item.id == created.id)) {
-        widget.question.answers.add(created);
+      final displayed = detailQuestion ?? widget.question;
+      if (!displayed.answers.any((item) => item.id == created.id)) {
+        displayed.answers.add(created);
+        displayed.answerCount += 1;
+      }
+      if (displayed.answers.length > displayed.answerCount) {
+        displayed.answerCount = displayed.answers.length;
       }
       answer.clear();
       if (mounted) setState(() {});
@@ -1391,200 +1850,218 @@ class _QuestionDetailsScreenState extends State<QuestionDetailsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        resizeToAvoidBottomInset: false,
-        appBar: AppBar(
-          title: const Text('السؤال'),
-          backgroundColor: Colors.white,
-          actions: [
-            IconButton(
-              key: const Key('share-question-action'),
-              tooltip: 'شارك السؤال',
-              onPressed: () => showModalBottomSheet<void>(
-                context: context,
-                showDragHandle: false,
-                isScrollControlled: true,
-                builder: (_) => QuestionShareSheet(question: widget.question),
-              ),
-              icon: const Icon(Icons.ios_share_rounded),
+  Widget build(BuildContext context) {
+    final question = detailQuestion ?? widget.question;
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        title: const Text('السؤال'),
+        backgroundColor: surface,
+        actions: [
+          IconButton(
+            key: const Key('share-question-action'),
+            tooltip: 'شارك السؤال',
+            onPressed: () => showModalBottomSheet<void>(
+              context: context,
+              showDragHandle: false,
+              isScrollControlled: true,
+              builder: (_) => QuestionShareSheet(question: question),
             ),
-          ],
-        ),
-        body: ListView(
-          key: const Key('details-list'),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.only(bottom: 20),
-          children: [
-            Container(
-              margin: const EdgeInsets.fromLTRB(14, 10, 14, 4),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: border),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5EBDD),
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                          child: Text(
-                            widget.question.category,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: primaryBlack,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Spacer(),
-                      Text(
-                        _timeAgo(widget.question.createdAt),
-                        style: const TextStyle(color: muted, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-                  Text(
-                    widget.question.title,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.question.body,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(color: border),
-                  Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 15,
-                        backgroundColor: Color(0xFFF2EDE5),
-                        child: Icon(
-                          Icons.person_outline_rounded,
-                          size: 17,
-                          color: primaryBlack,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        widget.question.author,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: ink,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-              child: Text(
-                answerCountLabel(widget.question.answers.length),
-                style: const TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w800,
-                  color: ink,
-                ),
-              ),
-            ),
-            ...widget.question.answers.map(
-              (item) => _AnswerCard(
-                answer: item,
-                onReport: (reason) => reportAnswer(item, reason),
-                onHelpful: () async {
-                  try {
-                    final result = await widget.repository.toggleHelpful(
-                      questionId: widget.question.id,
-                      answerId: item.id,
-                    );
-                    unawaited(
-                      AnalyticsService.instance.track(
-                        'helpful_vote',
-                        category: widget.question.category,
-                        entityId: widget.question.id,
-                      ),
-                    );
-                    item.isHelpful = result.isHelpful;
-                    item.helpfulCount = result.helpfulCount;
-                    if (mounted) setState(() {});
-                  } catch (_) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(
-                        content: Text('ما قدرنا نسجل «أفادني». حاول تاني.'),
-                      ),
-                    );
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-        bottomNavigationBar: AnimatedPadding(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.viewInsetsOf(context).bottom,
+            icon: const Icon(Icons.ios_share_rounded),
           ),
-          child: SafeArea(
-            top: false,
-            child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 52),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+        ],
+      ),
+      body: ListView(
+        key: const Key('details-list'),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.only(bottom: 20),
+        children: [
+          Container(
+            margin: const EdgeInsets.fromLTRB(14, 10, 14, 4),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: darkSurface,
+              border: Border.all(color: border),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Expanded(
-                      child: TextField(
-                        key: const Key('answer-field'),
-                        controller: answer,
-                        minLines: 1,
-                        maxLines: 4,
-                        textInputAction: TextInputAction.newline,
-                        decoration: const InputDecoration(
-                          hintText: 'شارك تجربة أو معلومة مفيدة...',
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: warmGold.withValues(alpha: .14),
+                          borderRadius: BorderRadius.circular(9),
+                        ),
+                        child: Text(
+                          question.category,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: warmGold,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    IconButton.filled(
-                      key: const Key('answer-send-button'),
-                      onPressed: addAnswer,
-                      constraints: const BoxConstraints.tightFor(
-                        width: 48,
-                        height: 48,
-                      ),
-                      style:
-                          IconButton.styleFrom(backgroundColor: primaryBlack),
-                      icon: const Icon(Icons.send_rounded),
+                    const Spacer(),
+                    Text(
+                      _timeAgo(question.createdAt),
+                      style: const TextStyle(color: muted, fontSize: 12),
                     ),
                   ],
                 ),
+                const SizedBox(height: 15),
+                Text(
+                  question.title,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  question.body,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 16),
+                const Divider(color: border),
+                Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 15,
+                      backgroundColor: raisedSurface,
+                      child: Icon(
+                        Icons.person_outline_rounded,
+                        size: 17,
+                        color: warmGold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      question.author,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
+            child: Text(
+              answerCountLabel(question.answerCount),
+              style: const TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
+                color: ink,
+              ),
+            ),
+          ),
+          if (detailLoading)
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          if (detailError)
+            Center(
+              child: TextButton.icon(
+                onPressed: _loadDetails,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('ما قدرنا نحمّل الإجابات. حاول تاني.'),
+              ),
+            ),
+          ...question.answers.map(
+            (item) => _AnswerCard(
+              answer: item,
+              onReport: (reason) => reportAnswer(item, reason),
+              onHelpful: () async {
+                try {
+                  final result = await widget.repository.toggleHelpful(
+                    questionId: question.id,
+                    answerId: item.id,
+                  );
+                  unawaited(
+                    AnalyticsService.instance.track(
+                      'helpful_vote',
+                      category: question.category,
+                      entityId: question.id,
+                    ),
+                  );
+                  item.isHelpful = result.isHelpful;
+                  item.helpfulCount = result.helpfulCount;
+                  if (mounted) setState(() {});
+                } catch (_) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    const SnackBar(
+                      content: Text('ما قدرنا نسجل «أفادني». حاول تاني.'),
+                    ),
+                  );
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: AnimatedPadding(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SafeArea(
+          top: false,
+          child: Container(
+            color: surface,
+            padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 52),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      key: const Key('answer-field'),
+                      controller: answer,
+                      minLines: 1,
+                      maxLines: 4,
+                      textInputAction: TextInputAction.newline,
+                      decoration: const InputDecoration(
+                        hintText: 'شارك تجربة أو معلومة مفيدة...',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    key: const Key('answer-send-button'),
+                    onPressed: addAnswer,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 48,
+                      height: 48,
+                    ),
+                    style: IconButton.styleFrom(
+                      backgroundColor: warmGold,
+                      foregroundColor: primaryBlack,
+                    ),
+                    icon: const Icon(Icons.send_rounded),
+                  ),
+                ],
               ),
             ),
           ),
         ),
-      );
+      ),
+    );
+  }
 }
 
 class _AnswerCard extends StatelessWidget {
@@ -1601,7 +2078,7 @@ class _AnswerCard extends StatelessWidget {
   Widget build(BuildContext context) => Card(
         margin: const EdgeInsets.fromLTRB(12, 5, 12, 5),
         elevation: 0,
-        color: Colors.white,
+        color: darkSurface,
         shape: RoundedRectangleBorder(
           side: const BorderSide(color: border),
           borderRadius: BorderRadius.circular(18),
@@ -1615,8 +2092,8 @@ class _AnswerCard extends StatelessWidget {
                 children: [
                   const CircleAvatar(
                     radius: 16,
-                    backgroundColor: primaryBlack,
-                    child: Icon(Icons.person, color: Colors.white, size: 18),
+                    backgroundColor: warmGold,
+                    child: Icon(Icons.person, color: primaryBlack, size: 18),
                   ),
                   const SizedBox(width: 9),
                   Expanded(
@@ -1628,19 +2105,25 @@ class _AnswerCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: secondaryBeige.withValues(alpha: .28),
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                    child: Text(
-                      answer.answerType,
-                      style: const TextStyle(
-                        color: primaryBlack,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: secondaryBeige.withValues(alpha: .28),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Text(
+                        answer.answerType,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: warmBeige,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
@@ -1655,11 +2138,8 @@ class _AnswerCard extends StatelessWidget {
                   TextButton.icon(
                     onPressed: onHelpful,
                     style: TextButton.styleFrom(
-                      foregroundColor:
-                          answer.isHelpful ? primaryBlack : Colors.black54,
-                      backgroundColor: answer.isHelpful
-                          ? warmGold.withValues(alpha: .25)
-                          : null,
+                      foregroundColor: answer.isHelpful ? primaryBlack : muted,
+                      backgroundColor: answer.isHelpful ? warmGold : null,
                     ),
                     icon: Icon(
                       answer.isHelpful
@@ -1690,11 +2170,10 @@ class _AnswerCard extends StatelessWidget {
                           Icon(
                             Icons.flag_outlined,
                             size: 18,
-                            color: Colors.black54,
+                            color: muted,
                           ),
                           SizedBox(width: 5),
-                          Text('إبلاغ',
-                              style: TextStyle(color: Colors.black54)),
+                          Text('إبلاغ', style: TextStyle(color: muted)),
                         ],
                       ),
                     ),
@@ -1737,11 +2216,11 @@ class _FieldLabel extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 13,
-            backgroundColor: primaryBlack,
+            backgroundColor: warmGold,
             child: Text(
               number,
               style: const TextStyle(
-                color: Colors.white,
+                color: primaryBlack,
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
               ),
@@ -1774,7 +2253,7 @@ class _SubmissionDialog extends StatelessWidget {
         title: const Text(
           'وصلنا سؤالك',
           textAlign: TextAlign.center,
-          style: TextStyle(fontWeight: FontWeight.w800, color: primaryBlack),
+          style: TextStyle(fontWeight: FontWeight.w800, color: cream),
         ),
         content: const Text(
           'تم إرسال سؤالك للمراجعة، ويمكنك متابعة حالته من أسئلتي.',
@@ -1801,7 +2280,7 @@ class _LoadingFeed extends StatelessWidget {
               height: 155,
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: darkSurface,
                 border: Border.all(color: border),
                 borderRadius: BorderRadius.circular(18),
               ),
@@ -1811,7 +2290,7 @@ class _LoadingFeed extends StatelessWidget {
                   height: 26,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: primaryBlack,
+                    color: warmGold,
                   ),
                 ),
               ),

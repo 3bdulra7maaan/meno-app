@@ -10,4 +10,6 @@ android/local.properties
 *.iml
 .idea/
 .vscode/
+__pycache__/
+*.pyc
 admin/config.js

@@ -10,7 +10,7 @@
 <body>
   <main id="login-view" class="login-shell">
     <form id="login-form" class="login-card">
-      <img class="brand-logo" src="../assets/brand/meno-wordmark.png" alt="Meno">
+      <img class="brand-logo login-logo" src="../assets/brand/meno-wordmark-on-dark.png?v=121" alt="Meno">
       <h1>لوحة الإدارة</h1>
       <p>سجّل الدخول بحساب إداري مصرح له.</p>
       <label>البريد الإلكتروني<input id="email" type="email" autocomplete="username" required></label>
@@ -23,15 +23,15 @@
   <div id="app-view" class="app" hidden>
     <header><strong>الإدارة والتحليلات</strong><span class="admin-state">حساب إداري مصرح</span><button id="logout" class="quiet">خروج</button></header>
     <nav aria-label="أقسام لوحة الإدارة">
-      <img class="sidebar-logo" src="../assets/brand/meno-wordmark-on-dark.png" alt="Meno">
-      <button data-view="dashboard" class="active">الملخص</button>
-      <button data-view="pending">قيد المراجعة</button>
-      <button data-view="approved">المعتمدة</button>
-      <button data-view="rejected">المرفوضة</button>
-      <button data-view="reports">البلاغات</button>
-      <button data-view="answers">الإجابات</button>
-      <button data-view="blocked">الكلمات المحظورة</button>
-      <button data-view="banners">البنرات</button>
+      <img class="sidebar-logo" src="../assets/brand/meno-wordmark-on-dark.png?v=121" alt="Meno">
+      <button data-view="dashboard" class="active"><span aria-hidden="true">⌂</span> الملخص</button>
+      <button data-view="pending"><span aria-hidden="true">◷</span> قيد المراجعة</button>
+      <button data-view="approved"><span aria-hidden="true">✓</span> المعتمدة</button>
+      <button data-view="rejected"><span aria-hidden="true">×</span> المرفوضة</button>
+      <button data-view="reports"><span aria-hidden="true">⚑</span> البلاغات</button>
+      <button data-view="answers"><span aria-hidden="true">◌</span> الإجابات</button>
+      <button data-view="blocked"><span aria-hidden="true">⊘</span> الكلمات المحظورة</button>
+      <button data-view="banners"><span aria-hidden="true">▣</span> البنرات</button>
     </nav>
     <section id="dashboard" class="page">
       <div class="section-title"><h1>ملخص اليوم</h1><button id="refresh" class="quiet">تحديث</button></div>
@@ -66,12 +66,18 @@
     <section id="banners" class="page" hidden>
       <div class="section-title"><h1>بنرات الرئيسية</h1><button id="new-banner" class="quiet">بنر جديد</button></div>
       <form id="banner-form" class="editor-form" hidden>
+        <div class="form-heading"><div><span>إدارة المحتوى</span><h2>إضافة بنر جديد</h2></div><p>ارفع صورة واضحة بنسبة 16:9 وأضف المعلومات الظاهرة للمستخدم.</p></div>
         <input id="banner-id" type="hidden">
-        <label>العنوان<input id="banner-title" required maxlength="100"></label>
-        <label>النص القصير<textarea id="banner-text" maxlength="240"></textarea></label>
-        <label>صورة البنر<input id="banner-image-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
+        <label class="banner-dropzone" for="banner-image-file">
+          <span class="upload-icon" aria-hidden="true">▧</span>
+          <strong>ارفع صورة من الجهاز</strong>
+          <small>PNG أو JPG أو WebP — النسبة المفضلة 16:9</small>
+          <input id="banner-image-file" type="file" accept="image/png,image/jpeg,image/webp">
+        </label>
         <input id="banner-image" type="hidden">
         <div id="banner-upload-progress" class="upload-progress" hidden><div></div><span>جاري رفع الصورة… 0%</span></div>
+        <label>العنوان<input id="banner-title" required maxlength="100"></label>
+        <label>النص القصير<textarea id="banner-text" maxlength="240"></textarea></label>
         <div class="filters"><label>وجهة البنر<select id="banner-target-type"><option value="none">بدون إجراء</option><option value="internal">صفحة تفاصيل داخل التطبيق</option><option value="external">رابط خارجي</option></select></label><label id="banner-target-wrap" hidden>الرابط الخارجي HTTPS<input id="banner-target" type="url" inputmode="url" placeholder="https://"></label></div>
         <div class="filters"><label>النوع<select id="banner-type"><option value="announcement">إعلان عام</option><option value="promotion">ترويج</option><option value="ad">إعلان مدفوع</option></select></label><label>الترتيب<input id="banner-order" type="number" min="0" value="0"></label><label>يبدأ<input id="banner-start" type="datetime-local"></label><label>ينتهي<input id="banner-end" type="datetime-local"></label></div>
         <label class="check"><input id="banner-enabled" type="checkbox" checked> مفعّل</label>

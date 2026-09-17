@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'brand.dart';
+
 const onboardingCompletedKey = 'meno_onboarding_completed_v1';
 const _black = Color(0xFF121212);
 const _gold = Color(0xFFD9A752);
 const _beige = Color(0xFFE5C495);
-const _surface = Color(0xFFFAF9F6);
+const _surface = Color(0xFF0B0C0C);
+const _raised = Color(0xFF181919);
+const _cream = Color(0xFFF7F0E5);
+const _muted = Color(0xFFAAA59C);
 
 Future<bool> isOnboardingCompleted() async =>
     (await SharedPreferences.getInstance()).getBool(onboardingCompletedKey) ??
@@ -92,15 +97,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 padding: EdgeInsets.fromLTRB(24, 18, 24, 4),
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
-                  child: Text(
-                    'Meno',
-                    textDirection: TextDirection.ltr,
-                    style: TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.w800,
-                      color: _black,
-                    ),
-                  ),
+                  child: MenoWordmark(height: 32, onDark: true),
                 ),
               ),
               Expanded(
@@ -119,11 +116,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           Container(
                             width: 112,
                             height: 112,
-                            decoration: const BoxDecoration(
-                              color: _beige,
+                            decoration: BoxDecoration(
+                              color: _raised,
                               shape: BoxShape.circle,
+                              border: Border.all(color: _gold),
                             ),
-                            child: Icon(slide.icon, size: 50, color: _black),
+                            child: Icon(slide.icon, size: 50, color: _gold),
                           ),
                           const SizedBox(height: 30),
                           Text(
@@ -132,14 +130,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             style: const TextStyle(
                               fontSize: 27,
                               fontWeight: FontWeight.w800,
-                              color: _black,
+                              color: _cream,
                             ),
                           ),
                           const SizedBox(height: 12),
                           Text(
                             slide.body,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 16, height: 1.7),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              height: 1.7,
+                              color: _muted,
+                            ),
                           ),
                         ],
                       ),

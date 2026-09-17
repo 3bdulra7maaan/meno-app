@@ -14,35 +14,22 @@ def mark(size: int) -> Image.Image:
     draw = ImageDraw.Draw(image)
     radius = round(116 * scale)
     draw.rounded_rectangle((0, 0, size - 1, size - 1), radius=radius, fill="#121212")
-    bubble = [round(value * scale) for value in (60, 120, 452, 374)]
-    draw.rounded_rectangle(bubble, radius=round(56 * scale), fill="#D9A752")
-    draw.polygon(
-        [
-            (round(182 * scale), round(355 * scale)),
-            (round(163 * scale), round(445 * scale)),
-            (round(278 * scale), round(355 * scale)),
-        ],
-        fill="#D9A752",
-    )
-    font = ImageFont.truetype(str(FONT), round(144 * scale))
+    font = ImageFont.truetype(str(FONT), round(350 * scale))
     draw.text(
-        (round(256 * scale), round(248 * scale)),
-        "M",
+        (round(256 * scale), round(245 * scale)),
+        "?",
         font=font,
-        fill="#121212",
+        fill="#D9A752",
         anchor="mm",
-        stroke_width=0,
     )
     return image
 
 
 def wordmark(text_color: str = "#121212") -> Image.Image:
-    image = Image.new("RGBA", (620, 140), (0, 0, 0, 0))
-    icon = mark(124)
-    image.alpha_composite(icon, (8, 8))
+    image = Image.new("RGBA", (430, 120), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-    font = ImageFont.truetype(str(FONT), 82)
-    draw.text((154, 71), "Meno", font=font, fill=text_color, anchor="lm")
+    font = ImageFont.truetype(str(FONT), 86)
+    draw.text((8, 60), "Meno", font=font, fill=text_color, anchor="lm")
     return image
 
 
@@ -50,7 +37,7 @@ def main() -> None:
     BRAND.mkdir(parents=True, exist_ok=True)
     mark(512).save(BRAND / "meno-mark.png", optimize=True)
     wordmark().save(BRAND / "meno-wordmark.png", optimize=True)
-    wordmark("#FFFFFF").save(BRAND / "meno-wordmark-on-dark.png", optimize=True)
+    wordmark("#D9A752").save(BRAND / "meno-wordmark-on-dark.png", optimize=True)
     icon_sizes = {
         "mipmap-mdpi": 48,
         "mipmap-hdpi": 72,
@@ -67,7 +54,7 @@ def main() -> None:
     )
     splash_target.mkdir(parents=True, exist_ok=True)
     mark(192).save(splash_target / "launch_mark.png", optimize=True)
-    screenshots = ROOT / "docs" / "screenshots" / "v1_2"
+    screenshots = ROOT / "docs" / "screenshots" / "v1_2_1"
     screenshots.mkdir(parents=True, exist_ok=True)
     mark(1024).save(screenshots / "app-icon.png", optimize=True)
 

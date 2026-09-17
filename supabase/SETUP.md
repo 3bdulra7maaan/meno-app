@@ -2,6 +2,10 @@
 
 No private credential or service-role key belongs in this repository or in the Flutter app.
 
+For V1.2.1 production-stability APKs, apply
+`migrations/202609160001_approved_question_paging.sql` before distributing the
+build. The paged Home/Search client requires its read-only RPC.
+
 ## Create and configure
 
 1. Create one Supabase project.
