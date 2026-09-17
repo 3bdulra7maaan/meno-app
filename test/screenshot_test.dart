@@ -343,7 +343,7 @@ Future<Uint8List> _renderText(String value) async {
   return bytes!.buffer.asUint8List();
 }
 
-class _StateRepository implements QuestionRepository {
+class _StateRepository extends QuestionRepository {
   _StateRepository(this.result);
   final Future<List<Question>> result;
 

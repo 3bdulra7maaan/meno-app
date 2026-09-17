@@ -4,12 +4,15 @@ import 'content_safety.dart';
 import 'question_repository.dart';
 import 'question_search.dart';
 
-class InMemoryQuestionRepository implements QuestionRepository {
+class InMemoryQuestionRepository extends QuestionRepository {
   InMemoryQuestionRepository({
     List<HomeBanner> banners = const [],
     Set<String> blockedWords = const {},
+    List<Question> additionalQuestions = const [],
   })  : _banners = List.of(banners),
-        _blockedWords = Set.of(blockedWords);
+        _blockedWords = Set.of(blockedWords) {
+    _questions.addAll(additionalQuestions);
+  }
 
   final List<HomeBanner> _banners;
   final Set<String> _blockedWords;
@@ -87,6 +90,10 @@ class InMemoryQuestionRepository implements QuestionRepository {
     required String category,
   }) async =>
       filterApprovedQuestions(_questions, query: query, category: category);
+
+  @override
+  Future<Question> questionDetails(Question summary) async =>
+      _questions.firstWhere((question) => question.id == summary.id);
 
   @override
   Future<List<Question>> currentUserQuestions() async => List.unmodifiable(
