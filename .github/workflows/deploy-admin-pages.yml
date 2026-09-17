@@ -44,7 +44,9 @@ jobs:
 
           rm -rf dist
           mkdir -p dist/admin dist/assets/brand dist/assets/fonts
-          cp -R docs/. dist/
+          # Publish only the public website files, never internal docs or tests.
+          cp docs/index.html docs/privacy.html docs/styles.css \
+            docs/robots.txt docs/sitemap.xml dist/
           cp admin/index.html admin/styles.css admin/app.js dist/admin/
           cp assets/brand/meno-*.png dist/assets/brand/
           cp assets/fonts/Almarai-*.ttf dist/assets/fonts/
